@@ -67,13 +67,9 @@ impl File {
 
 impl Drop for File {
     fn drop(&mut self) {
-        let res: u32;
         unsafe {
-            res = close_file(self.id);
-        }
-        if res == 0 {
-            panic!("File does not close successfully")
-        }
+            close_file(self.id);
+        } // The execution will be interrupted if the import function returns an error
     }
 }
 
@@ -97,12 +93,8 @@ impl Read for Internet {
 
 impl Drop for Internet {
     fn drop(&mut self) {
-        let res: u32;
         unsafe {
-            res = close_connection(self.id);
-        }
-        if res == 0 {
-            panic!("File does not close successfully")
-        }
+            close_connection(self.id);
+        } // The execution will be interrupted if the import function returns an error
     }
 }
