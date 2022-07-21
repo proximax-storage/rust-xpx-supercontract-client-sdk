@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::{Read, Write, Error};
 
 extern "C" {
     fn read_file_stream(identifier: i64, ptr_to_write: u32) -> u32;
@@ -26,7 +26,7 @@ impl Write for FileWriter {
 }
 
 impl FileWriter {
-    pub unsafe fn new(path: String) -> Self {
+    pub unsafe fn new(path: String) -> Result<Self, Error> {
         let mode = "w";
         let id = open_file(
             path.as_ptr() as u32,
@@ -34,7 +34,10 @@ impl FileWriter {
             mode.as_ptr() as u32,
             mode.len() as u32,
         );
-        Self(id)
+        if id < 0 {
+            return Err(Error::new(std::io::ErrorKind::Other, "File cannot be opened, negative id returned by the Sirius Chain"))
+        }
+        Ok(Self(id))
     }
 }
 
@@ -42,7 +45,7 @@ impl Drop for FileWriter {
     fn drop(&mut self) {
         unsafe {
             close_file(self.0);
-        } // The execution will be interrupted if the import function returns an error
+        }
     }
 }
 
@@ -57,7 +60,7 @@ impl Read for FileReader {
 }
 
 impl FileReader {
-    pub unsafe fn new(path: String) -> Self {
+    pub unsafe fn new(path: String) -> Result<Self, Error> {
         let mode = "r";
         let id = open_file(
             path.as_ptr() as u32,
@@ -65,7 +68,10 @@ impl FileReader {
             mode.as_ptr() as u32,
             mode.len() as u32,
         );
-        Self(id)
+        if id < 0 {
+            return Err(Error::new(std::io::ErrorKind::Other, "File cannot be opened, negative id returned by the Sirius Chain"))
+        }
+        Ok(Self(id))
     }
 }
 
@@ -73,7 +79,7 @@ impl Drop for FileReader {
     fn drop(&mut self) {
         unsafe {
             close_file(self.0);
-        } // The execution will be interrupted if the import function returns an error
+        }
     }
 }
 
