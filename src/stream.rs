@@ -1,4 +1,4 @@
-use std::io::{Read, Write, Error};
+use std::io::{Error, Read, Write};
 
 extern "C" {
     fn read_file_stream(identifier: i64, ptr_to_write: u32) -> u32;
@@ -35,7 +35,10 @@ impl FileWriter {
             mode.len() as u32,
         );
         if id < 0 {
-            return Err(Error::new(std::io::ErrorKind::Other, "File cannot be opened, negative id returned by the Sirius Chain"))
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "File cannot be opened, negative id returned by the Sirius Chain",
+            ));
         }
         Ok(Self(id))
     }
@@ -69,7 +72,10 @@ impl FileReader {
             mode.len() as u32,
         );
         if id < 0 {
-            return Err(Error::new(std::io::ErrorKind::Other, "File cannot be opened, negative id returned by the Sirius Chain"))
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "File cannot be opened, negative id returned by the Sirius Chain",
+            ));
         }
         Ok(Self(id))
     }
@@ -88,10 +94,15 @@ pub struct Internet {
 }
 
 impl Internet {
-    pub unsafe fn new(url: String) -> Self {
-        Self {
-            id: open_connection(url.as_ptr() as u32, url.len() as u32),
+    pub unsafe fn new(url: String) -> Result<Self, Error> {
+        let id = open_connection(url.as_ptr() as u32, url.len() as u32);
+        if id < 0 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "Connection cannot be opened, negative id returned by the Sirius Chain",
+            ));
         }
+        Ok(Self { id })
     }
 }
 
