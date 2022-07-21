@@ -10,47 +10,58 @@ extern "C" {
     fn close_connection(identifier: i64) -> u32;
 }
 
-// We have different function signatures for both File and Internet, so I do not make the constructor part of this trait
-// We do not need to write to Internet, only File will need to write something, so I do not inherit Write trait for this trait
-#[allow(drop_bounds)]
-pub trait Stream: Read + Drop {}
+pub enum FileOperation {
+    Read(FileReader),
+    Write(FileWriter),
+}
 
 pub struct File {
     id: i64,
+    fo: FileOperation,
 }
 
-impl Stream for File {}
+pub struct FileWriter(i64);
 
-impl File {
-    pub unsafe fn new(path: String, mode: String) -> Self {
-        Self {
-            id: open_file(
-                path.as_ptr() as u32,
-                path.len() as u32,
-                mode.as_ptr() as u32,
-                mode.len() as u32,
-            ),
-        }
-    }
-}
-
-impl Read for File {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        unsafe {
-            return Ok(read_file_stream(self.id, buf.as_mut_ptr() as u32) as usize);
-        }
-    }
-}
-
-impl Write for File {
+impl Write for FileWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         unsafe {
-            return Ok(write_file_stream(self.id, buf.as_ptr() as u32, buf.len() as u32) as usize);
+            return Ok(write_file_stream(self.0, buf.as_ptr() as u32, buf.len() as u32) as usize);
         }
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
+    }
+}
+pub struct FileReader(i64);
+
+impl Read for FileReader {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        unsafe {
+            return Ok(read_file_stream(self.0, buf.as_mut_ptr() as u32) as usize);
+        }
+    }
+}
+
+impl File {
+    pub unsafe fn new(path: String, mode: String) -> Self {
+        let id = open_file(
+            path.as_ptr() as u32,
+            path.len() as u32,
+            mode.as_ptr() as u32,
+            mode.len() as u32,
+        );
+        let op: FileOperation;
+        if mode == "w" {
+            op = FileOperation::Write(FileWriter(id));
+        } else {
+            op = FileOperation::Read(FileReader(id));
+        }
+        Self { id, fo: op }
+    }
+
+    pub fn get_handler(&self) -> &FileOperation {
+        &self.fo
     }
 }
 
@@ -69,8 +80,6 @@ impl Drop for File {
 pub struct Internet {
     id: i64,
 }
-
-impl Stream for Internet {}
 
 impl Internet {
     pub unsafe fn new(url: String) -> Self {
