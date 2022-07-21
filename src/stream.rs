@@ -8,7 +8,7 @@ extern "C" {
     fn open_connection(ptr_to_url: u32, length_url: u32) -> i64;
     fn read_from_internet(identifier: i64, ptr_to_write: u32) -> u32;
     fn close_connection(identifier: i64) -> u32;
-    fn flush();
+    fn flush(identifier: i64);
 }
 
 pub struct FileWriter(i64);
@@ -21,7 +21,7 @@ impl Write for FileWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        unsafe { Ok(flush()) }
+        unsafe { Ok(flush(self.0)) }
     }
 }
 
