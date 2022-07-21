@@ -115,9 +115,7 @@ impl Drop for FileReader {
     }
 }
 
-pub struct Internet {
-    id: i64,
-}
+pub struct Internet(i64);
 
 impl Internet {
     pub unsafe fn new(url: String) -> Result<Self, Error> {
@@ -128,20 +126,38 @@ impl Internet {
                 "Connection cannot be opened, negative id returned by the Sirius Chain",
             ));
         }
-        Ok(Self { id })
+        Ok(Self(id))
     }
 }
 
 impl Read for Internet {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        unsafe { return Ok(read_from_internet(self.id, buf.as_mut_ptr() as u32) as usize) }
+        if buf.len() > 16 * 1024 {
+            let mut res = 0;
+            for i in (0..buf.len()).step_by(16 * 1024) {
+                if i + 16 * 1024 < buf.len() {
+                    let subarray = &buf[i..16 * 1024];
+                    unsafe {
+                        res += read_from_internet(self.0, subarray.as_ptr() as u32);
+                    }
+                } else {
+                    let subarray = &buf[i..buf.len()];
+                    unsafe {
+                        res += read_from_internet(self.0, subarray.as_ptr() as u32);
+                    }
+                }
+            }
+            Ok(res as usize)
+        } else {
+            unsafe { Ok(read_from_internet(self.0, buf.as_ptr() as u32) as usize) }
+        }
     }
 }
 
 impl Drop for Internet {
     fn drop(&mut self) {
         unsafe {
-            close_connection(self.id);
+            close_connection(self.0);
         }
     }
 }
