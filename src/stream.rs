@@ -15,8 +15,26 @@ pub struct FileWriter(i64);
 
 impl Write for FileWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        unsafe {
-            return Ok(write_file_stream(self.0, buf.as_ptr() as u32, buf.len() as u32) as usize);
+        if buf.len() > 16 * 1024 {
+            let mut res = 0;
+            for i in (0..buf.len()).step_by(16 * 1024) {
+                if i + 16 * 1024 < buf.len() {
+                    unsafe {
+                        res += write_file_stream(self.0, buf.as_ptr() as u32 + i as u32, 16 * 1024);
+                    }
+                } else {
+                    unsafe {
+                        res += write_file_stream(
+                            self.0,
+                            buf.as_ptr() as u32 + i as u32,
+                            buf.len() as u32 - i as u32,
+                        );
+                    }
+                }
+            }
+            Ok(res as usize)
+        } else {
+            unsafe { Ok(write_file_stream(self.0, buf.as_ptr() as u32, buf.len() as u32) as usize) }
         }
     }
 
