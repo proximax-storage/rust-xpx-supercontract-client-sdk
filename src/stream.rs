@@ -116,6 +116,6 @@ impl Drop for Internet {
     fn drop(&mut self) {
         unsafe {
             close_connection(self.id);
-        } // The execution will be interrupted if the import function returns an error
+        }
     }
 }
