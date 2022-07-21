@@ -10,16 +10,6 @@ extern "C" {
     fn close_connection(identifier: i64) -> u32;
 }
 
-pub enum FileOperation {
-    Read(FileReader),
-    Write(FileWriter),
-}
-
-pub struct File {
-    id: i64,
-    fo: FileOperation,
-}
-
 pub struct FileWriter(i64);
 
 impl Write for FileWriter {
@@ -33,6 +23,28 @@ impl Write for FileWriter {
         Ok(())
     }
 }
+
+impl FileWriter {
+    pub unsafe fn new(path: String) -> Self {
+        let mode = "w";
+        let id = open_file(
+            path.as_ptr() as u32,
+            path.len() as u32,
+            mode.as_ptr() as u32,
+            mode.len() as u32,
+        );
+        Self(id)
+    }
+}
+
+impl Drop for FileWriter {
+    fn drop(&mut self) {
+        unsafe {
+            close_file(self.0);
+        } // The execution will be interrupted if the import function returns an error
+    }
+}
+
 pub struct FileReader(i64);
 
 impl Read for FileReader {
@@ -43,32 +55,23 @@ impl Read for FileReader {
     }
 }
 
-impl File {
-    pub unsafe fn new(path: String, mode: String) -> Self {
+impl FileReader {
+    pub unsafe fn new(path: String) -> Self {
+        let mode = "r";
         let id = open_file(
             path.as_ptr() as u32,
             path.len() as u32,
             mode.as_ptr() as u32,
             mode.len() as u32,
         );
-        let op: FileOperation;
-        if mode == "w" {
-            op = FileOperation::Write(FileWriter(id));
-        } else {
-            op = FileOperation::Read(FileReader(id));
-        }
-        Self { id, fo: op }
-    }
-
-    pub fn get_handler(&self) -> &FileOperation {
-        &self.fo
+        Self(id)
     }
 }
 
-impl Drop for File {
+impl Drop for FileReader {
     fn drop(&mut self) {
         unsafe {
-            close_file(self.id);
+            close_file(self.0);
         } // The execution will be interrupted if the import function returns an error
     }
 }
