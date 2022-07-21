@@ -74,8 +74,16 @@ pub struct FileReader(i64);
 
 impl Read for FileReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        unsafe {
-            return Ok(read_file_stream(self.0, buf.as_mut_ptr() as u32) as usize);
+        if buf.len() > 16 * 1024 {
+            let mut res = 0;
+            for i in (0..buf.len()).step_by(16 * 1024) {
+                unsafe {
+                    res += read_file_stream(self.0, buf.as_ptr() as u32 + i as u32);
+                }
+            }
+            Ok(res as usize)
+        } else {
+            unsafe { Ok(read_file_stream(self.0, buf.as_ptr() as u32) as usize) }
         }
     }
 }
