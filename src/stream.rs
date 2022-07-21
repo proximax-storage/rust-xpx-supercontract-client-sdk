@@ -77,8 +77,16 @@ impl Read for FileReader {
         if buf.len() > 16 * 1024 {
             let mut res = 0;
             for i in (0..buf.len()).step_by(16 * 1024) {
-                unsafe {
-                    res += read_file_stream(self.0, buf.as_ptr() as u32 + i as u32);
+                if i + 16 * 1024 < buf.len() {
+                    let subarray = &buf[i..16 * 1024];
+                    unsafe {
+                        res += read_file_stream(self.0, subarray.as_ptr() as u32);
+                    }
+                } else {
+                    let subarray = &buf[i..buf.len()];
+                    unsafe {
+                        res += read_file_stream(self.0, subarray.as_ptr() as u32);
+                    }
                 }
             }
             Ok(res as usize)
