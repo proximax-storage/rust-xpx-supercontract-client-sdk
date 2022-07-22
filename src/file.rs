@@ -136,7 +136,7 @@ impl FileReader {
             subarray.push(0);
         }
         let mut ret = buf_size;
-        while ret != 0 {
+        while ret > 0 {
             ret = read_file_stream(id, subarray.as_mut_ptr() as u32);
             buffer.append(&mut subarray);
             // subarray.fill(0);
