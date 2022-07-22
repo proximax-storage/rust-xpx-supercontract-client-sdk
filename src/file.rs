@@ -12,39 +12,37 @@ extern "C" {
     fn buffer_size() -> u32;
 }
 
-pub struct FileWriter(i64);
+pub struct FileWriter {
+    id: i64,
+    buffer_size: u32,
+}
 
 impl Write for FileWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        if buf.len() > 16 * 1024 {
-            let mut res = 0;
-            for i in (0..buf.len()).step_by(16 * 1024) {
-                if i + 16 * 1024 < buf.len() {
-                    unsafe {
-                        res += write_file_stream(self.0, buf.as_ptr() as u32 + i as u32, 16 * 1024);
-                    }
-                } else {
-                    unsafe {
-                        res += write_file_stream(
-                            self.0,
-                            buf.as_ptr() as u32 + i as u32,
-                            buf.len() as u32 - i as u32,
-                        );
-                    }
-                }
-            }
-            Ok(res as usize)
-        } else {
-            unsafe { Ok(write_file_stream(self.0, buf.as_ptr() as u32, buf.len() as u32) as usize) }
+        // let buf = &buf[..min(self.buffer_size as usize, buf.len())];
+        if buf.len() > self.buffer_size as usize {
+            return Err(Error::new(std::io::ErrorKind::Other, "Buffer size is exceeding the maximum transmission size allowed, please use [write_all] instead"));
         }
+        let len = buf.len();
+        unsafe { Ok(write_file_stream(self.id, buf.as_ptr() as u32, len as u32) as usize) }
+    }
+
+    fn write_all(&mut self, mut buf: &[u8]) -> std::io::Result<()> {
+        let mut subarray: &[u8];
+        while buf.len() > self.buffer_size as usize {
+            (subarray, buf) = buf.split_at(self.buffer_size as usize);
+            self.write(subarray)?;
+        }
+        self.write(buf)?;
+        Ok(())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        let res = unsafe { flush(self.0) };
+        let res = unsafe { flush(self.id) };
         if res == 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,
-                "Failed to flush the written buffer on Sirius Chain side, it returned false.",
+                "Failed to flush the written buffer on Sirius Chain side, it returned false",
             ));
         }
         Ok(())
@@ -66,14 +64,17 @@ impl FileWriter {
                 "File cannot be opened, negative id returned by the Sirius Chain",
             ));
         }
-        Ok(Self(id))
+        Ok(Self {
+            id,
+            buffer_size: buffer_size(),
+        })
     }
 }
 
 impl Drop for FileWriter {
     fn drop(&mut self) {
         unsafe {
-            close_file(self.0);
+            close_file(self.id);
         }
     }
 }
