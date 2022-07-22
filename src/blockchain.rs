@@ -92,11 +92,9 @@ impl BlockchainInterface {
     }
 
     // I assume it will be the same as POST method body (recieving it in JSON format)
-    pub unsafe fn get_call_params<T>(&mut self) -> Result<HashMap<String, String>> {
+    pub unsafe fn get_call_params(&mut self) -> Result<HashMap<String, String>> {
         let len = get_call_params(self.buffer.as_mut_ptr() as u32);
         let serialized_json = String::from_utf8_unchecked(self.buffer[..len as usize].to_vec());
-        return Ok(serde_json::from_str::<HashMap<String, String>>(
-            &serialized_json,
-        )?);
+        return Ok(serde_json::from_str(&serialized_json)?);
     }
 }
