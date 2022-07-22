@@ -5,7 +5,7 @@ extern "C" {
     fn write_file_stream(identifier: i64, ptr_to_buffer: u32, length_buffer: u32) -> u64;
     fn open_file(ptr_to_path: u32, length_path: u32, ptr_to_mode: u32, length_mode: u32) -> i64;
     fn close_file(identifier: i64) -> u32;
-    fn flush(identifier: i64);
+    fn flush(identifier: i64) -> u32;
 }
 
 pub struct FileWriter(i64);
@@ -36,7 +36,14 @@ impl Write for FileWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        unsafe { Ok(flush(self.0)) }
+        let res = unsafe { flush(self.0) };
+        if res == 0 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to flush the written buffer on Sirius Chain side, it returned false.",
+            ));
+        }
+        Ok(())
     }
 }
 
