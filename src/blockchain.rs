@@ -1,5 +1,7 @@
 use std::{collections::HashMap, io::Result};
 
+use super::file::buffer_size;
+
 static HASH_SIZE: usize = 32;
 
 extern "C" {
@@ -17,7 +19,7 @@ extern "C" {
     fn get_transaction_block_height(ptr: u32) -> u64;
     fn get_response_transaction_hash(ptr_to_read: u32, ptr_to_write: u32) -> u32;
     fn get_transaction_content(ptr_to_read: u32, ptr_to_write: u32) -> u32;
-    fn buffer_size() -> u32;
+    // fn buffer_size() -> u32;
     fn get_call_params(return_ptr: u32) -> u32;
 }
 

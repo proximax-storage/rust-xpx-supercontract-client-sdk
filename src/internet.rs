@@ -1,13 +1,12 @@
+use super::file::buffer_size;
 use std::{
     cmp::min,
     io::{Error, Read},
 };
-
 extern "C" {
     fn open_connection(ptr_to_url: u32, length_url: u32) -> i64;
     fn read_from_internet(identifier: i64, ptr_to_write: u32) -> u32;
     fn close_connection(identifier: i64) -> u32;
-    fn buffer_size() -> u32;
 }
 
 pub struct Internet {
@@ -37,7 +36,7 @@ impl Internet {
         for _ in 0..buf_size {
             subarray.push(0);
         }
-        let mut ret = buf_size;
+        let mut ret = buf_size as u32;
         while ret > 0 {
             ret = read_from_internet(id, subarray.as_mut_ptr() as u32);
             buffer.append(&mut subarray);
