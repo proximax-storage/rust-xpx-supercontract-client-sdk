@@ -1,6 +1,7 @@
 use std::{cmp::min, io::Read};
 
 use sdk::file::FileReader;
+use serial_test::serial;
 
 static mut BUF: [u8; 16384] = [99; 16384];
 static mut I: usize = 0;
@@ -39,24 +40,29 @@ pub unsafe extern "C" fn buffer_size() -> u32 {
 }
 
 #[test]
+#[serial]
 fn test_read_16kb_buffer_1gb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut buffer = vec![0; 1073741824];
     let len = file.read(&mut buffer).unwrap();
     buffer = buffer[..len].to_vec();
     assert_eq!(buffer, vec![99; 16384]);
+    unsafe { I = 0 };
 }
 
 #[test]
+#[serial]
 fn test_read_16kb_buffer_1mb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut buffer = vec![0; 1024 * 1024];
     let len = file.read(&mut buffer).unwrap();
     buffer = buffer[..len].to_vec();
     assert_eq!(buffer, vec![99; 16384]);
+    unsafe { I = 0 };
 }
 
 #[test]
+#[serial]
 fn test_read_16kb_buffer_1kb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut big_buffer = Vec::new();
@@ -71,4 +77,5 @@ fn test_read_16kb_buffer_1kb() {
         big_buffer.append(&mut tmp_buffer);
     }
     assert_eq!(big_buffer, vec![99; 16384]);
+    unsafe { I = 0 };
 }

@@ -1,6 +1,7 @@
 use std::{cmp::min, io::Read};
 
 use sdk::file::FileReader;
+use serial_test::serial;
 
 static mut BUF: [u8; 1073741824 * 1] = [99; 1073741824 * 1];
 static mut I: usize = 0;
@@ -39,6 +40,7 @@ pub unsafe extern "C" fn buffer_size() -> u32 {
 }
 
 #[test]
+#[serial]
 fn test_read_1gb_buffer_1gb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut big_buffer = Vec::new();
@@ -53,9 +55,11 @@ fn test_read_1gb_buffer_1gb() {
         big_buffer.append(&mut tmp_buffer);
     }
     assert_eq!(big_buffer.len(), 1073741824);
+    unsafe { I = 0 };
 }
 
 #[test]
+#[serial]
 fn test_read_1gb_buffer_1mb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut big_buffer = Vec::new();
@@ -70,10 +74,12 @@ fn test_read_1gb_buffer_1mb() {
         big_buffer.append(&mut tmp_buffer);
     }
     assert_eq!(big_buffer.len(), 1073741824);
+    unsafe { I = 0 };
 }
 
 #[ignore]
 #[test]
+#[serial]
 fn test_read_1gb_buffer_1kb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut big_buffer = Vec::new();
