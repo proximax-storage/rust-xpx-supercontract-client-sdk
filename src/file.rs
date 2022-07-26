@@ -3,9 +3,10 @@ use std::{
     io::{Error, Read, Write},
 };
 
+// I changed the memory addresses (ptr_to_something) to u64 becuase my machine is a 64-bit system
 extern "C" {
-    fn read_file_stream(identifier: i64, ptr_to_write: u64) -> u64;
-    fn write_file_stream(identifier: i64, ptr_to_buffer: u64, length_buffer: u64) -> u64;
+    fn read_file_stream(identifier: i64, ptr_to_write: u64) -> i64; // it will return -1 if fail
+    fn write_file_stream(identifier: i64, ptr_to_buffer: u64, length_buffer: u64) -> i64; // it will return -1 if fail
     fn open_file(ptr_to_path: u64, length_path: u64, ptr_to_mode: u64, length_mode: u64) -> i64;
     fn close_file(identifier: i64) -> u32;
     fn flush(identifier: i64) -> u32;
@@ -87,7 +88,7 @@ pub struct FileReader {
 impl Read for FileReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         unsafe {
-            self.read_from_bc();
+            self.read_from_bc()?;
         }
         let len = min(self.buffer.len(), buf.len());
         // Fill the given buffer                      // Save the exceeding part for future use
@@ -117,9 +118,9 @@ impl FileReader {
         })
     }
 
-    unsafe fn read_from_bc(&mut self) {
+    unsafe fn read_from_bc(&mut self) -> std::io::Result<()> {
         let buf_size = buffer_size();
-        let mut ret = buf_size;
+        let mut ret = buf_size as i64;
         let mut subarray = Vec::new();
         for _ in 0..buf_size {
             subarray.push(0);
@@ -129,6 +130,13 @@ impl FileReader {
             ret = read_file_stream(self.id, subarray.as_mut_ptr() as u64);
             self.buffer.append(&mut subarray[..ret as usize].to_vec());
         }
+        if ret < 0 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "File cannot be read, Sirius Chain returned negative length of the buffer",
+            ));
+        }
+        Ok(())
     }
 }
 

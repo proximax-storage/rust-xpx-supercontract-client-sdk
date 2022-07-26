@@ -3,9 +3,11 @@ use std::{
     cmp::min,
     io::{Error, Read},
 };
+
+// I changed the memory addresses (ptr_to_something) to u64 becuase my machine is a 64-bit system
 extern "C" {
-    fn open_connection(ptr_to_url: u32, length_url: u32) -> i64;
-    fn read_from_internet(identifier: i64, ptr_to_write: u32) -> u32;
+    fn open_connection(ptr_to_url: u64, length_url: u64) -> i64;
+    fn read_from_internet(identifier: i64, ptr_to_write: u64) -> i64; // will return -1 if fail
     fn close_connection(identifier: i64) -> u32;
 }
 
@@ -16,7 +18,7 @@ pub struct Internet {
 
 impl Internet {
     pub unsafe fn new(url: String) -> Result<Self, Error> {
-        let id = open_connection(url.as_ptr() as u32, url.len() as u32);
+        let id = open_connection(url.as_ptr() as u64, url.len() as u64);
         if id < 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,
@@ -25,48 +27,41 @@ impl Internet {
         }
         Ok(Self {
             id,
-            buffer: Internet::read_from_bc(id),
+            buffer: Vec::new(),
         })
     }
 
-    unsafe fn read_from_bc(id: i64) -> Vec<u8> {
+    unsafe fn read_from_bc(&mut self) -> std::io::Result<()> {
         let buf_size = buffer_size();
-        let mut buffer = vec![];
-        let mut subarray: Vec<u8> = vec![];
+        let mut ret = buf_size as i64;
+        let mut subarray = Vec::new();
         for _ in 0..buf_size {
             subarray.push(0);
         }
-        let mut ret = buf_size as u32;
-        while ret > 0 {
-            ret = read_from_internet(id, subarray.as_mut_ptr() as u32);
-            buffer.append(&mut subarray);
-            // subarray.fill(0);
+        // I can't forsee how large the next line is, so I'll just store it and stop calling RPC if exceeding
+        while ret > 0 && self.buffer.len() < buf_size as usize {
+            ret = read_from_internet(self.id, subarray.as_mut_ptr() as u64);
+            self.buffer.append(&mut subarray[..ret as usize].to_vec());
         }
-        return buffer;
+        if ret < 0 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "File cannot be read, Sirius Chain returned negative length of the buffer",
+            ));
+        }
+        Ok(())
     }
 }
 
 impl Read for Internet {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        unsafe {
+            self.read_from_bc()?;
+        }
         let len = min(self.buffer.len(), buf.len());
+        // Fill the given buffer                      // Save the exceeding part for future use
         buf[..len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
         Ok(len)
-    }
-
-    fn read_exact(&mut self, buf: &mut [u8]) -> std::io::Result<()> {
-        if self.buffer.len() < buf.len() {
-            return Err(Error::new(std::io::ErrorKind::Other, "The given buffer size is larger than the size of the buffer to be read, cannot read exactly the size given"));
-        }
-        let len = buf.len();
-        buf[..len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
-        Ok(())
-    }
-
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> std::io::Result<usize> {
-        let len = self.buffer.len();
-        *buf = self.buffer.clone();
-        self.buffer.clear();
-        return Ok(len);
     }
 }
 
