@@ -22,15 +22,33 @@ impl Write for FileWriter {
     fn write(&mut self, mut buf: &[u8]) -> std::io::Result<usize> {
         let mut subarray: &[u8];
         let mut ret = 0;
-        while buf.len() > self.buffer_size as usize {
+        let mut written_length = i64::MAX;
+        while buf.len() > self.buffer_size as usize && written_length > 0 {
             (subarray, buf) = buf.split_at(self.buffer_size as usize);
             let len = subarray.len();
             unsafe {
+                written_length = write_file_stream(self.id, subarray.as_ptr() as u64, len as u64);
+            }
+            if written_length < 0 {
+                return Err(Error::new(
+                    std::io::ErrorKind::Other,
+                    "File cannot be written, Sirius Chain returned negative value for bytes written",
+                ));
+            }
+            ret += written_length;
+        }
+        if buf.len() <= self.buffer_size as usize {
+            unsafe {
+                (subarray, buf) = buf.split_at(buf.len() as usize);
+                let len = subarray.len();
                 ret += write_file_stream(self.id, subarray.as_ptr() as u64, len as u64);
             }
         }
-        unsafe {
-            ret += write_file_stream(self.id, buf.as_ptr() as u64, buf.len() as u64);
+        if buf.len() > 0 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "The file is too small to store all the data in the given buffer",
+            ));
         }
         Ok(ret as usize)
     }
