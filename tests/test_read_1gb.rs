@@ -68,15 +68,9 @@ fn test_read_file_1gb_buffer_1gb() {
     let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1073741824];
-    let mut len = file.read(&mut buffer).unwrap();
+    let len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    assert_eq!(big_buffer, vec![99; 16384]); // Max buffer size in the file class is 16kb only
-    while len > 0 {
-        len = file.read(&mut buffer).unwrap();
-        tmp_buffer = buffer[..len].to_vec();
-        big_buffer.append(&mut tmp_buffer);
-    }
     assert_eq!(big_buffer.len(), 1073741824);
     unsafe { I = 0 };
 }
@@ -90,7 +84,7 @@ fn test_read_file_1gb_buffer_1mb() {
     let mut len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    assert_eq!(big_buffer, vec![99; 16384]); // Max buffer size in the file class is 16kb only
+    assert_eq!(big_buffer, vec![99; 1024 * 1024]); // Max buffer size in the file class is 1mb only
     while len > 0 {
         len = file.read(&mut buffer).unwrap();
         tmp_buffer = buffer[..len].to_vec();
@@ -146,15 +140,9 @@ fn test_read_internet_1gb_buffer_1gb() {
     let mut file = unsafe { Internet::new("./".to_string()).unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1073741824];
-    let mut len = file.read(&mut buffer).unwrap();
+    let len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    assert_eq!(big_buffer, vec![99; 16384]); // Max buffer size in the file class is 16kb only
-    while len > 0 {
-        len = file.read(&mut buffer).unwrap();
-        tmp_buffer = buffer[..len].to_vec();
-        big_buffer.append(&mut tmp_buffer);
-    }
     assert_eq!(big_buffer.len(), 1073741824);
     unsafe { I = 0 };
 }
@@ -168,7 +156,7 @@ fn test_read_internet_1gb_buffer_1mb() {
     let mut len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    assert_eq!(big_buffer, vec![99; 16384]); // Max buffer size in the file class is 16kb only
+    assert_eq!(big_buffer, vec![99; 1024 * 1024]); // Max buffer size in the file class is 1mb only
     while len > 0 {
         len = file.read(&mut buffer).unwrap();
         tmp_buffer = buffer[..len].to_vec();

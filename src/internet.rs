@@ -14,6 +14,7 @@ extern "C" {
 pub struct Internet {
     id: i64,
     buffer: Vec<u8>,
+    size: usize,
 }
 
 impl Internet {
@@ -28,18 +29,16 @@ impl Internet {
         Ok(Self {
             id,
             buffer: Vec::new(),
+            size: buffer_size() as usize,
         })
     }
 
-    unsafe fn read_from_bc(&mut self) -> std::io::Result<()> {
-        let buf_size = buffer_size();
-        let mut ret = buf_size as i64;
+    unsafe fn read_through_rpc(&mut self) -> std::io::Result<()> {
+        let mut ret = self.size as i64;
         let mut subarray = Vec::new();
-        for _ in 0..buf_size {
-            subarray.push(0);
-        }
+        subarray.resize(self.size, 0);
         // I can't forsee how large the next line is, so I'll just store it and stop calling RPC if exceeding
-        while ret > 0 && self.buffer.len() < buf_size as usize {
+        while ret > 0 && self.buffer.len() < self.size as usize {
             ret = read_from_internet(self.id, subarray.as_mut_ptr() as u64);
             self.buffer.append(&mut subarray[..ret as usize].to_vec());
         }
@@ -55,13 +54,18 @@ impl Internet {
 
 impl Read for Internet {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        unsafe {
-            self.read_from_bc()?;
+        let mut i = 0;
+        let mut len = buf.len();
+        while i < buf.len() && len > 0 {
+            unsafe {
+                self.read_through_rpc()?;
+            }
+            len = min(self.buffer.len(), buf.len() - i);
+            // Fill the given buffer                      // Save the exceeding part for future use
+            buf[i..i + len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
+            i += len;
         }
-        let len = min(self.buffer.len(), buf.len());
-        // Fill the given buffer                      // Save the exceeding part for future use
-        buf[..len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
-        Ok(len)
+        Ok(i)
     }
 }
 

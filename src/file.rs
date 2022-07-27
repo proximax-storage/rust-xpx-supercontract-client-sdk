@@ -19,23 +19,20 @@ pub struct FileWriter {
 }
 
 impl Write for FileWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        // let buf = &buf[..min(self.buffer_size as usize, buf.len())];
-        if buf.len() > self.buffer_size as usize {
-            return Err(Error::new(std::io::ErrorKind::Other, "Buffer size is exceeding the maximum transmission size allowed, please use [write_all] instead"));
-        }
-        let len = buf.len();
-        unsafe { Ok(write_file_stream(self.id, buf.as_ptr() as u64, len as u64) as usize) }
-    }
-
-    fn write_all(&mut self, mut buf: &[u8]) -> std::io::Result<()> {
+    fn write(&mut self, mut buf: &[u8]) -> std::io::Result<usize> {
         let mut subarray: &[u8];
+        let mut ret = 0;
         while buf.len() > self.buffer_size as usize {
             (subarray, buf) = buf.split_at(self.buffer_size as usize);
-            self.write(subarray)?;
+            let len = subarray.len();
+            unsafe {
+                ret += write_file_stream(self.id, subarray.as_ptr() as u64, len as u64);
+            }
         }
-        self.write(buf)?;
-        Ok(())
+        unsafe {
+            ret += write_file_stream(self.id, buf.as_ptr() as u64, buf.len() as u64);
+        }
+        Ok(ret as usize)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
@@ -83,17 +80,23 @@ impl Drop for FileWriter {
 pub struct FileReader {
     id: i64,
     buffer: Vec<u8>,
+    size: usize,
 }
 
 impl Read for FileReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        unsafe {
-            self.read_from_bc()?;
+        let mut i = 0;
+        let mut len = buf.len();
+        while i < buf.len() && len > 0 {
+            unsafe {
+                self.read_through_rpc()?;
+            }
+            len = min(self.buffer.len(), buf.len() - i);
+            // Fill the given buffer                      // Save the exceeding part for future use
+            buf[i..i + len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
+            i += len;
         }
-        let len = min(self.buffer.len(), buf.len());
-        // Fill the given buffer                      // Save the exceeding part for future use
-        buf[..len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
-        Ok(len)
+        Ok(i)
     }
 }
 
@@ -115,18 +118,16 @@ impl FileReader {
         Ok(Self {
             id,
             buffer: Vec::new(),
+            size: buffer_size() as usize,
         })
     }
 
-    unsafe fn read_from_bc(&mut self) -> std::io::Result<()> {
-        let buf_size = buffer_size();
-        let mut ret = buf_size as i64;
+    unsafe fn read_through_rpc(&mut self) -> std::io::Result<()> {
+        let mut ret = self.size as i64;
         let mut subarray = Vec::new();
-        for _ in 0..buf_size {
-            subarray.push(0);
-        }
+        subarray.resize(self.size, 0);
         // I can't forsee how large the next line is, so I'll just store it and stop calling RPC if exceeding
-        while ret > 0 && self.buffer.len() < buf_size as usize {
+        while ret > 0 && self.buffer.len() < self.size as usize {
             ret = read_file_stream(self.id, subarray.as_mut_ptr() as u64);
             self.buffer.append(&mut subarray[..ret as usize].to_vec());
         }
