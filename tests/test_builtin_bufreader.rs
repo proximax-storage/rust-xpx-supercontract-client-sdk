@@ -1,4 +1,4 @@
-use sdk::file::FileReader;
+use sdk::{file::FileReader, internet::Internet};
 use serial_test::serial;
 use std::{
     cmp::min,
@@ -174,6 +174,139 @@ fn test_file_read_exact() {
         }
     }
     let file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let mut reader = BufReader::new(file);
+    let mut big_buffer = Vec::new();
+    reader.read_exact(&mut big_buffer).unwrap();
+    let expected: Vec<u8> = vec![];
+    assert_eq!(big_buffer, expected);
+    let mut big_buffer = [0u8; 1 * 1048576];
+    reader.read_exact(&mut big_buffer).unwrap();
+    let mut remain = vec![];
+    for _ in 0..1048576 - test_case.len() {
+        remain.push(99);
+    }
+    let mut expected = "Hi wasmer.\nGood to see you.\n".as_bytes().to_vec();
+    expected.append(&mut remain);
+    assert_eq!(big_buffer.len(), 1048576);
+    assert_eq!(expected.len(), 1048576);
+    assert_eq!(unsafe { POINTER }, 1048576);
+    assert_eq!(big_buffer.to_vec(), expected);
+    unsafe {
+        FILE = [99; 16384 * 1024];
+        POINTER = 0
+    };
+}
+
+#[test]
+#[serial]
+fn test_internet_read_default() {
+    let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
+    unsafe {
+        for i in 0..test_case.len() {
+            FILE[i] = *test_case.get(i).unwrap();
+        }
+    }
+    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut reader = BufReader::new(file);
+    let mut big_buffer = Vec::new();
+    reader.read(&mut big_buffer).unwrap();
+    let expected: Vec<u8> = vec![];
+    assert_eq!(big_buffer, expected);
+    big_buffer.resize(20 * 1048576, 0);
+    let ret = reader.read(&mut big_buffer).unwrap();
+    let mut remain = unsafe { FILE[..8192].to_vec() };
+    remain.resize(20 * 1048576, 0);
+    assert_eq!(big_buffer.len(), 20 * 1048576);
+    assert_eq!(ret, 8192); // default size is 8kb for BufReader, see https://doc.rust-lang.org/std/io/struct.BufReader.html#method.new
+    assert_eq!(big_buffer.to_vec(), remain);
+    unsafe {
+        FILE = [99; 16384 * 1024];
+        POINTER = 0
+    };
+}
+
+#[test]
+#[serial]
+fn test_internet_read_with_cap() {
+    let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
+    unsafe {
+        for i in 0..test_case.len() {
+            FILE[i] = *test_case.get(i).unwrap();
+        }
+    }
+    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut reader = BufReader::with_capacity(20 * 1048576, file);
+    let mut big_buffer = Vec::new();
+    big_buffer.resize(20 * 1048576, 0);
+    let ret = reader.read(&mut big_buffer).unwrap();
+    let mut expected = unsafe { FILE.to_vec() };
+    expected.resize(20 * 1048576, 0);
+    assert_eq!(ret, 16 * 1048576);
+    assert_eq!(big_buffer, expected);
+    unsafe {
+        FILE = [99; 16384 * 1024];
+        POINTER = 0
+    };
+}
+
+#[test]
+#[serial]
+fn test_internet_read_line() {
+    let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
+    unsafe {
+        for i in 0..test_case.len() {
+            FILE[i] = *test_case.get(i).unwrap();
+        }
+    }
+    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut reader = BufReader::new(file);
+    let mut big_buffer = String::new();
+    reader.read_line(&mut big_buffer).unwrap();
+    assert_eq!(big_buffer, "Hi wasmer.\n");
+    reader.read_line(&mut big_buffer).unwrap();
+    assert_eq!(big_buffer, "Hi wasmer.\nGood to see you.\n");
+    unsafe {
+        FILE = [99; 16384 * 1024];
+        POINTER = 0
+    };
+}
+
+#[test]
+#[serial]
+fn test_internet_read_all() {
+    let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
+    unsafe {
+        for i in 0..test_case.len() {
+            FILE[i] = *test_case.get(i).unwrap();
+        }
+    }
+    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut reader = BufReader::new(file);
+    let mut big_buffer = Vec::new();
+    reader.read_to_end(&mut big_buffer).unwrap();
+    let mut remain = vec![];
+    for _ in 0..unsafe { FILE.len() } - test_case.len() {
+        remain.push(99);
+    }
+    let mut expected = "Hi wasmer.\nGood to see you.\n".as_bytes().to_vec();
+    expected.append(&mut remain);
+    assert_eq!(big_buffer, expected);
+    unsafe {
+        FILE = [99; 16384 * 1024];
+        POINTER = 0
+    };
+}
+
+#[test]
+#[serial]
+fn test_internet_read_exact() {
+    let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
+    unsafe {
+        for i in 0..test_case.len() {
+            FILE[i] = *test_case.get(i).unwrap();
+        }
+    }
+    let file = unsafe { Internet::new("./".to_string()).unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_exact(&mut big_buffer).unwrap();
