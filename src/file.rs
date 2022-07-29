@@ -11,6 +11,16 @@ extern "C" {
     fn close_file(identifier: i64) -> u32;
     fn flush(identifier: i64) -> u32;
     pub fn buffer_size() -> u64;
+    fn remove_file(ptr_to_path: u64, length_path: u64) -> u32;
+    fn rename_file(
+        ptr_to_new_path: u64,
+        length_new_path: u64,
+        ptr_to_old_path: u64,
+        length_old_path: u64,
+    ) -> u32;
+    fn listdir(ptr_to_path: u64, length_path: u64, ptr_to_write: u64) -> i64; // it will return -1 if error
+    fn path_exists(ptr_to_path: u64, length_path: u64) -> i32; // it will return -1 if error
+    fn is_file(ptr_to_path: u64, length_path: u64) -> i32; // it will return -1 if buggy string or other errors
 }
 
 pub struct FileWriter {
@@ -165,4 +175,98 @@ impl Drop for FileReader {
             close_file(self.id);
         }
     }
+}
+
+pub unsafe fn remove_file_sdk(path: String) -> std::io::Result<()> {
+    let ret = remove_file(path.as_ptr() as u64, path.len() as u64);
+    if ret == 0 {
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "Failed to remove file at {}, Sirius Chain returned false from the operation",
+                path
+            ),
+        ));
+    }
+    Ok(())
+}
+
+pub unsafe fn rename_file_sdk(path: String, new_path: String) -> std::io::Result<()> {
+    let ret = rename_file(
+        new_path.as_ptr() as u64,
+        new_path.len() as u64,
+        path.as_ptr() as u64,
+        path.len() as u64,
+    );
+    if ret == 0 {
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "Failed to remove file at {}, Sirius Chain returned false from the operation",
+                path
+            ),
+        ));
+    }
+    Ok(())
+}
+
+pub unsafe fn listdir_sdk(dir: String) -> std::io::Result<Vec<String>> {
+    let mut filenames = Vec::new();
+    filenames.resize(buffer_size() as usize, 0u8);
+    let num_file = listdir(
+        dir.as_ptr() as u64,
+        dir.len() as u64,
+        filenames.as_mut_ptr() as u64,
+    );
+    if num_file < 0 {
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "Failed to retrieve entries at {}, Sirius Chain returned negative number for the number of entries",
+                dir
+            ),
+        ));
+    }
+    let filenames = filenames
+        .split(|x| *x == '\n'.to_digit(10).unwrap() as u8)
+        .collect::<Vec<_>>();
+    let files = filenames
+        .into_iter()
+        .map(|x| String::from_utf8(x.to_vec()).unwrap())
+        .collect::<Vec<_>>();
+    Ok(files)
+}
+
+pub unsafe fn path_exists_sdk(path: String) -> std::io::Result<bool> {
+    let res = path_exists(path.as_ptr() as u64, path.len() as u64);
+    if res < 0 {
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "Failed to query the path: {}, Sirius Chain returned negative number for the result",
+                path
+            ),
+        ));
+    }
+    if res == 0 {
+        return Ok(false);
+    }
+    Ok(true)
+}
+
+pub unsafe fn is_file_sdk(path: String) -> std::io::Result<bool> {
+    let res = is_file(path.as_ptr() as u64, path.len() as u64);
+    if res < 0 {
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "Failed to query the path: {}, Sirius Chain returned negative number for the result",
+                path
+            ),
+        ));
+    }
+    if res == 0 {
+        return Ok(false);
+    }
+    Ok(true)
 }
