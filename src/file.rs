@@ -214,12 +214,12 @@ pub unsafe fn rename_file_sdk(path: String, new_path: String) -> std::io::Result
 pub unsafe fn listdir_sdk(dir: String) -> std::io::Result<Vec<String>> {
     let mut filenames = Vec::new();
     filenames.resize(buffer_size() as usize, 0u8);
-    let num_file = listdir(
+    let res = listdir(
         dir.as_ptr() as u64,
         dir.len() as u64,
         filenames.as_mut_ptr() as u64,
     );
-    if num_file < 0 {
+    if res < 0 {
         return Err(Error::new(
             std::io::ErrorKind::Other,
             format!(
@@ -235,7 +235,6 @@ pub unsafe fn listdir_sdk(dir: String) -> std::io::Result<Vec<String>> {
         .into_iter()
         .map(|x| String::from_utf8(x.to_vec()).unwrap())
         .collect::<Vec<_>>();
-    assert_eq!(num_file as usize, files.len());
     Ok(files)
 }
 
