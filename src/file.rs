@@ -18,9 +18,10 @@ extern "C" {
         ptr_to_old_path: u64,
         length_old_path: u64,
     ) -> u32;
-    fn listdir(ptr_to_path: u64, length_path: u64, ptr_to_write: u64) -> i64; // it will return -1 if error
-    fn path_exists(ptr_to_path: u64, length_path: u64) -> i32; // it will return -1 if error
-    fn is_file(ptr_to_path: u64, length_path: u64) -> i32; // it will return -1 if buggy string or other errors
+    fn listdir(ptr_to_path: u64, length_path: u64, ptr_to_write: u64) -> i64;
+    fn path_exists(ptr_to_path: u64, length_path: u64) -> u32;
+    fn is_file(ptr_to_path: u64, length_path: u64) -> u32;
+    fn create_dir(ptr_to_path: u64, length_path: u64) -> u32;
 }
 
 pub struct FileWriter {
@@ -234,39 +235,33 @@ pub unsafe fn listdir_sdk(dir: String) -> std::io::Result<Vec<String>> {
         .into_iter()
         .map(|x| String::from_utf8(x.to_vec()).unwrap())
         .collect::<Vec<_>>();
+    assert_eq!(num_file as usize, files.len());
     Ok(files)
 }
 
-pub unsafe fn path_exists_sdk(path: String) -> std::io::Result<bool> {
+pub unsafe fn path_exists_sdk(path: String) -> bool {
     let res = path_exists(path.as_ptr() as u64, path.len() as u64);
-    if res < 0 {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            format!(
-                "Failed to query the path: {}, Sirius Chain returned negative number for the result",
-                path
-            ),
-        ));
-    }
     if res == 0 {
-        return Ok(false);
+        return false;
     }
-    Ok(true)
+    true
 }
 
-pub unsafe fn is_file_sdk(path: String) -> std::io::Result<bool> {
+pub unsafe fn is_file_sdk(path: String) -> bool {
     let res = is_file(path.as_ptr() as u64, path.len() as u64);
-    if res < 0 {
+    if res == 0 {
+        return false;
+    }
+    true
+}
+
+pub unsafe fn create_dir_sdk(path: String) -> std::io::Result<()> {
+    let res = create_dir(path.as_ptr() as u64, path.len() as u64);
+    if res == 0 {
         return Err(Error::new(
             std::io::ErrorKind::Other,
-            format!(
-                "Failed to query the path: {}, Sirius Chain returned negative number for the result",
-                path
-            ),
+            "Sirius Chain failed to create a directory at the given location",
         ));
     }
-    if res == 0 {
-        return Ok(false);
-    }
-    Ok(true)
+    Ok(())
 }
