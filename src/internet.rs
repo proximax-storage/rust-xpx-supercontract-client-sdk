@@ -1,6 +1,7 @@
 use super::file::buffer_size;
 use std::{
     cmp::min,
+    collections::VecDeque,
     io::{Error, Read},
 };
 
@@ -13,7 +14,7 @@ extern "C" {
 
 pub struct Internet {
     id: i64,
-    buffer: Vec<u8>,
+    buffer: VecDeque<u8>,
     size: usize,
 }
 
@@ -23,30 +24,28 @@ impl Internet {
         if id < 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,
-                "Connection cannot be opened, negative id returned by the Sirius Chain",
+                "Connection cannot be opened",
             ));
         }
         Ok(Self {
             id,
-            buffer: Vec::new(),
+            buffer: VecDeque::new(),
             size: buffer_size() as usize,
         })
     }
 
-    unsafe fn read_through_rpc(&mut self) -> std::io::Result<()> {
+    unsafe fn load_buffer(&mut self) -> std::io::Result<()> {
         let mut ret = self.size as i64;
         let mut subarray = Vec::new();
         subarray.resize(self.size, 0);
         // I can't forsee how large the next line is, so I'll just store it and stop calling RPC if exceeding
         while ret > 0 && self.buffer.len() < self.size as usize {
             ret = read_from_internet(self.id, subarray.as_mut_ptr() as u64);
-            self.buffer.append(&mut subarray[..ret as usize].to_vec());
+            self.buffer
+                .append(&mut VecDeque::from(subarray[..ret as usize].to_vec()));
         }
         if ret < 0 {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                "File cannot be read, Sirius Chain returned negative length of the buffer",
-            ));
+            return Err(Error::new(std::io::ErrorKind::Other, "File cannot be read"));
         }
         Ok(())
     }
@@ -58,11 +57,12 @@ impl Read for Internet {
         let mut len = buf.len();
         while i < buf.len() && len > 0 {
             unsafe {
-                self.read_through_rpc()?;
+                self.load_buffer()?;
             }
             len = min(self.buffer.len(), buf.len() - i);
-            // Fill the given buffer                      // Save the exceeding part for future use
-            buf[i..i + len].clone_from_slice(&self.buffer.drain(..len).collect::<Vec<u8>>());
+            for x in 0..len {
+                buf[i + x] = self.buffer.pop_front().unwrap();
+            }
             i += len;
         }
         Ok(i)
