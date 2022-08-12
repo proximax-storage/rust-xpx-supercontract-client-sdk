@@ -37,7 +37,10 @@ impl Write for FileWriter {
             }
             ret += written_length;
             if written_length == 0 {
-                break;
+                return Err(Error::new(
+                    std::io::ErrorKind::Other,
+                    "Insufficient storage space to write all the data in the given buffer",
+                ));
             }
         }
         // if buf.len() <= self.buffer_size as usize {
@@ -47,12 +50,12 @@ impl Write for FileWriter {
         //         ret += write_file_stream(self.id, subarray.as_ptr() as u64, len as u64);
         //     }
         // }
-        if buf.len() > 0 {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Insufficient storage space to write all the data in the given buffer",
-            ));
-        }
+        // if buf.len() > 0 {
+        //     return Err(Error::new(
+        //         std::io::ErrorKind::Other,
+        //         "Insufficient storage space to write all the data in the given buffer",
+        //     ));
+        // }
         Ok(ret as usize)
     }
 
