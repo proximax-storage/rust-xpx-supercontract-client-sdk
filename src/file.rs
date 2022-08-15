@@ -24,38 +24,18 @@ impl Write for FileWriter {
         let mut subarray: &[u8];
         let mut ret = 0;
         while buf.len() > 0 {
-            // let mut written_length = 0;
             (subarray, buf) = buf.split_at(min(buf.len(), self.buffer_size as usize));
             let len = subarray.len();
             let written_length =
                 unsafe { write_file_stream(self.id, subarray.as_ptr() as u64, len as u64) };
-            if written_length < 0 {
+            if written_length < len as i64 {
                 return Err(Error::new(
                     std::io::ErrorKind::Other,
                     "File cannot be written",
                 ));
             }
             ret += written_length;
-            if written_length == 0 {
-                return Err(Error::new(
-                    std::io::ErrorKind::Other,
-                    "Insufficient storage space to write all the data in the given buffer",
-                ));
-            }
         }
-        // if buf.len() <= self.buffer_size as usize {
-        //     unsafe {
-        //         (subarray, buf) = buf.split_at(buf.len() as usize);
-        //         let len = subarray.len();
-        //         ret += write_file_stream(self.id, subarray.as_ptr() as u64, len as u64);
-        //     }
-        // }
-        // if buf.len() > 0 {
-        //     return Err(Error::new(
-        //         std::io::ErrorKind::Other,
-        //         "Insufficient storage space to write all the data in the given buffer",
-        //     ));
-        // }
         Ok(ret as usize)
     }
 
