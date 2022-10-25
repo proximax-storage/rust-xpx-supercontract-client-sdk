@@ -1,9 +1,11 @@
+use std::{error::Error, io::Error as ioError};
+
 use crate::file::buffer_size;
 
 extern "C" {
     fn create_dir_iterator(ptr_to_path: u64, length_path: u64, recursive: u8) -> i64;
     fn destroy_dir_iterator(identifier: i64) -> u8;
-    fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64;
+    fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> i64;
     fn remove_dir_iterator(identifier: i64) -> u8;
     fn has_next_dir_iterator(identifier: i64) -> u8;
 }
@@ -22,7 +24,7 @@ impl Iterator for DirIterator {
         let mut dir = Vec::new();
         dir.resize(unsafe { buffer_size() } as usize, 0);
         let res = unsafe { next_dir_iterator(self.id, dir.as_mut_ptr() as u64) };
-        if res == 0 {
+        if res == -1 {
             return None;
         }
         dir.truncate(res as usize);
@@ -54,7 +56,14 @@ impl DirIterator {
         Self { id }
     }
 
-    pub fn remove(&self) {
-        unsafe { remove_dir_iterator(self.id) };
+    pub fn remove(&self) -> Result<(), Box<dyn Error>> {
+        let res = unsafe { remove_dir_iterator(self.id) };
+        if res == 1 {
+            return Ok(());
+        }
+        return Err(Box::new(ioError::new(
+            std::io::ErrorKind::Other,
+            "Failed to remove the file/folder",
+        )));
     }
 }

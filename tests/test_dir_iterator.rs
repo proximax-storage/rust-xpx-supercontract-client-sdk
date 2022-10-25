@@ -10,6 +10,7 @@ static mut ITERATOR_STACK: Option<Vec<Arc<Mutex<fs::ReadDir>>>> = None;
 static mut IDENTIFIER: i64 = 0;
 static mut RECURSE: bool = false;
 static mut CURRENT: Option<String> = None;
+static mut PREVIOUS: Option<String> = None;
 
 #[no_mangle]
 pub extern "C" fn create_dir_iterator(ptr_to_path: u64, length_path: u64, recursive: u8) -> i64 {
@@ -43,15 +44,31 @@ pub extern "C" fn destroy_dir_iterator(identifier: i64) -> u8 {
 #[no_mangle]
 pub extern "C" fn has_next_dir_iterator(_identifier: i64) -> u8 {
     // TODO: idk how to implement this, cuz Rust iterator does not provide has_next() function
+    if let Some(file) = unsafe { PREVIOUS.as_ref() } {
+        if unsafe { !RECURSE } {
+            if file == "./pkg" {
+                return 0;
+            }
+        } else {
+            if file == "./READNE.md" {
+                return 0;
+            }
+        }
+    }
     return 1;
 }
 
 #[no_mangle]
-pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64 {
+pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> i64 {
     assert_eq!(unsafe { IDENTIFIER }, identifier);
     let ptr = ptr_to_write as *mut u8;
     if unsafe { RECURSE } {
         if let Some(iterator) = unsafe { ITERATOR.as_mut() } {
+            unsafe {
+                if let Some(cur) = CURRENT.as_ref() {
+                    PREVIOUS = Some(cur.clone());
+                }
+            }
             let path = iterator.lock().unwrap().next();
             if let Some(path) = path {
                 if let Ok(path) = path {
@@ -59,8 +76,9 @@ pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64 {
                     if path.is_dir() {
                         if path.to_str().unwrap() == "./target"
                             || path.to_str().unwrap() == "./.git"
+                            || path.to_str().unwrap() == "./pkg"
                         {
-                            return 0;
+                            return next_dir_iterator(identifier, ptr_to_write);
                         }
                         let temp = unsafe { ITERATOR.as_ref().unwrap().clone() };
                         unsafe {
@@ -81,26 +99,31 @@ pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64 {
                             for x in 0..length {
                                 unsafe { *ptr.add(x) = path[x] };
                             }
-                            return length as u64;
+                            return length as i64;
                         } else {
-                            return 0;
+                            return -1;
                         }
                     }
                 } else {
-                    return 0;
+                    return -1;
                 }
             } else {
                 if unsafe { ITERATOR_STACK.as_mut().unwrap().len() != 0 } {
                     unsafe { ITERATOR = Some(ITERATOR_STACK.as_mut().unwrap().pop().unwrap()) };
                     return next_dir_iterator(identifier, ptr_to_write);
                 }
-                return 0;
+                return -1;
             }
         } else {
-            return 0;
+            return -1;
         }
     } else {
         if let Some(iterator) = unsafe { ITERATOR.as_mut() } {
+            unsafe {
+                if let Some(cur) = CURRENT.as_ref() {
+                    PREVIOUS = Some(cur.clone());
+                }
+            }
             let path = iterator.lock().unwrap().next();
             if let Some(path) = path {
                 if let Ok(path) = path {
@@ -115,18 +138,18 @@ pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64 {
                         for x in 0..length {
                             unsafe { *ptr.add(x) = path[x] };
                         }
-                        return length as u64;
+                        return length as i64;
                     } else {
-                        return 0;
+                        return -1;
                     }
                 } else {
-                    return 0;
+                    return -1;
                 }
             } else {
-                return 0;
+                return -1;
             }
         } else {
-            return 0;
+            return -1;
         }
     }
 }
@@ -192,6 +215,8 @@ fn test_iterator_recurse() {
         "./tests/test_read_16kb.rs",
         "./tests/test_dir_iterator.rs",
         "./README.md",
+        "./Cargo.lock",
+        "./Cargo.toml",
     ];
     let actual = iterator.collect::<Vec<_>>();
     assert_eq!(actual, expected);
@@ -211,7 +236,7 @@ fn test_iterator_remove() {
     fs::File::create("tests/dummy.txt").unwrap();
     while let Some(file) = iterator.next() {
         if file == "./tests/dummy.txt" {
-            iterator.remove();
+            iterator.remove().unwrap();
         }
     }
 }

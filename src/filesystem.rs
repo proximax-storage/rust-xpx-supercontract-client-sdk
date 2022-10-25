@@ -1,4 +1,3 @@
-use super::file::buffer_size;
 use std::io::Error;
 
 mod import_function {
@@ -10,7 +9,6 @@ mod import_function {
             ptr_to_old_path: u64,
             length_old_path: u64,
         ) -> u32;
-        pub fn listdir(ptr_to_path: u64, length_path: u64, ptr_to_write: u64) -> i64;
         pub fn path_exists(ptr_to_path: u64, length_path: u64) -> u32;
         pub fn is_file(ptr_to_path: u64, length_path: u64) -> u32;
         pub fn create_dir(ptr_to_path: u64, length_path: u64) -> u32;
@@ -42,30 +40,6 @@ pub unsafe fn move_file(path: String, new_path: String) -> std::io::Result<()> {
         ));
     }
     Ok(())
-}
-
-pub unsafe fn listdir(dir: String) -> std::io::Result<Vec<String>> {
-    let mut filenames = Vec::new();
-    filenames.resize(buffer_size() as usize, 0u8);
-    let res = import_function::listdir(
-        dir.as_ptr() as u64,
-        dir.len() as u64,
-        filenames.as_mut_ptr() as u64,
-    );
-    if res < 0 {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to retrieve entries at {}", dir),
-        ));
-    }
-    let filenames = filenames
-        .split(|x| *x == '\0'.to_digit(10).unwrap() as u8)
-        .collect::<Vec<_>>();
-    let files = filenames
-        .into_iter()
-        .map(|x| String::from_utf8(x.to_vec()).unwrap())
-        .collect::<Vec<_>>();
-    Ok(files)
 }
 
 pub unsafe fn path_exists(path: String) -> bool {
