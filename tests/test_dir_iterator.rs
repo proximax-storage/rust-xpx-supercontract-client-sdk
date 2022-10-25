@@ -41,6 +41,12 @@ pub extern "C" fn destroy_dir_iterator(identifier: i64) -> u8 {
 }
 
 #[no_mangle]
+pub extern "C" fn has_next_dir_iterator(_identifier: i64) -> u8 {
+    // TODO: idk how to implement this, cuz Rust iterator does not provide has_next() function
+    return 1;
+}
+
+#[no_mangle]
 pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64 {
     assert_eq!(unsafe { IDENTIFIER }, identifier);
     let ptr = ptr_to_write as *mut u8;

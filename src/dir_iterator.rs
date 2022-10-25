@@ -5,6 +5,7 @@ extern "C" {
     fn destroy_dir_iterator(identifier: i64) -> u8;
     fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u64;
     fn remove_dir_iterator(identifier: i64) -> u8;
+    fn has_next_dir_iterator(identifier: i64) -> u8;
 }
 
 pub struct DirIterator {
@@ -15,6 +16,9 @@ impl Iterator for DirIterator {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if unsafe { has_next_dir_iterator(self.id) } == 0 {
+            return None;
+        }
         let mut dir = Vec::new();
         dir.resize(unsafe { buffer_size() } as usize, 0);
         let res = unsafe { next_dir_iterator(self.id, dir.as_mut_ptr() as u64) };
