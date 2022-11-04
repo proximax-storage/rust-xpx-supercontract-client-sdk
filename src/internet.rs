@@ -19,7 +19,7 @@ pub struct Internet {
 }
 
 impl Internet {
-    pub unsafe fn new(url: String) -> Result<Self, Error> {
+    pub unsafe fn new(url: &str) -> Result<Self, Error> {
         let id = open_connection(url.as_ptr() as u64, url.len() as u64);
         if id < 0 {
             return Err(Error::new(

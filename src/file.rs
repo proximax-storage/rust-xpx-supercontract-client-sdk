@@ -52,7 +52,7 @@ impl Write for FileWriter {
 }
 
 impl FileWriter {
-    pub unsafe fn new(path: String) -> Result<Self, Error> {
+    pub unsafe fn new(path: &str) -> Result<Self, Error> {
         let mode = "w";
         let id = open_file(
             path.as_ptr() as u64,
@@ -106,7 +106,7 @@ impl Read for FileReader {
 }
 
 impl FileReader {
-    pub unsafe fn new(path: String) -> Result<Self, Error> {
+    pub unsafe fn new(path: &str) -> Result<Self, Error> {
         let mode = "r";
         let id = open_file(
             path.as_ptr() as u64,
