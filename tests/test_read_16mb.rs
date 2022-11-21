@@ -1,7 +1,6 @@
-use std::{cmp::min, io::Read};
-
 use sdk::{file::FileReader, internet::Internet};
 use serial_test::serial;
+use std::{cmp::min, io::Read};
 
 static mut BUF: [u8; 16384 * 1024] = [99; 16384 * 1024];
 static mut I: usize = 0;

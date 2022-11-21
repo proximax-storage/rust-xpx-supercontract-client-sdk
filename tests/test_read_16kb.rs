@@ -1,14 +1,12 @@
-use std::{cmp::min, io::Read};
-
 use sdk::{file::FileReader, internet::Internet};
 use serial_test::serial;
+use std::{cmp::min, io::Read};
 
 static mut BUF: [u8; 16384] = [99; 16384];
 static mut I: usize = 0;
 
 #[no_mangle]
 pub unsafe extern "C" fn read_file_stream(_identifier: i64, ptr_to_write: u64) -> u64 {
-    // let mut given_buf = Vec::from_raw_parts(ptr_to_write as *mut u8, 0, 16384);
     let ptr = ptr_to_write as *mut u8;
     let mut ret = 0;
     for x in I..min(16384 + I, BUF.len()) {

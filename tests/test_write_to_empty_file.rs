@@ -1,7 +1,6 @@
-use std::{cmp::min, io::Write};
-
 use sdk::file::FileWriter;
 use serial_test::serial;
+use std::{cmp::min, io::Write};
 
 static mut BUF: [u8; 0] = [];
 static mut I: usize = 0;

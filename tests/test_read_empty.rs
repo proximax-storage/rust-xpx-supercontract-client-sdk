@@ -1,14 +1,12 @@
-use std::{cmp::min, io::Read};
-
 use sdk::{file::FileReader, internet::Internet};
 use serial_test::serial;
+use std::{cmp::min, io::Read};
 
 static mut BUF: [u8; 0] = [];
 static mut I: usize = 0;
 
 #[no_mangle]
 pub unsafe extern "C" fn read_file_stream(_identifier: i64, ptr_to_write: u64) -> u64 {
-    // let mut given_buf = Vec::from_raw_parts(ptr_to_write as *mut u8, 0, 16384);
     let ptr = ptr_to_write as *mut u8;
     let mut ret = 0;
     for x in I..min(16384 + I, BUF.len()) {
@@ -95,7 +93,6 @@ fn test_read_file_empty_buffer_1kb() {
     let mut len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    // assert_eq!(big_buffer, vec![99; 1024]);
     while len > 0 {
         len = file.read(&mut buffer).unwrap();
         tmp_buffer = buffer[..len].to_vec();
@@ -136,7 +133,6 @@ fn test_read_internet_empty_buffer_1gb() {
     let mut len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    // assert_eq!(big_buffer, vec![99; 16384]); // Max buffer size in the file class is empty only
     while len > 0 {
         len = file.read(&mut buffer).unwrap();
         tmp_buffer = buffer[..len].to_vec();
@@ -156,7 +152,6 @@ fn test_read_internet_empty_buffer_1mb() {
     let mut len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    // assert_eq!(big_buffer, vec![99; 16384]); // Max buffer size in the file class is empty only
     while len > 0 {
         len = file.read(&mut buffer).unwrap();
         tmp_buffer = buffer[..len].to_vec();
@@ -176,7 +171,6 @@ fn test_read_internet_empty_buffer_1kb() {
     let mut len = file.read(&mut buffer).unwrap();
     let mut tmp_buffer = buffer[..len].to_vec();
     big_buffer.append(&mut tmp_buffer);
-    // assert_eq!(big_buffer, vec![99; 1024]); // My buffer size is only 1kb, so the expected buffer should be of size 1kb
     while len > 0 {
         len = file.read(&mut buffer).unwrap();
         tmp_buffer = buffer[..len].to_vec();

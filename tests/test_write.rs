@@ -1,7 +1,6 @@
-use std::{cmp::min, io::Write};
-
 use sdk::file::FileWriter;
 use serial_test::serial;
+use std::{cmp::min, io::Write};
 
 static mut BUF: [u8; 1048576 * 500] = [0; 1048576 * 500];
 static mut I: usize = 0;
@@ -107,9 +106,18 @@ fn test_write_buffer_empty() {
     let ret = file.write(&mut buffer).unwrap();
     assert_eq!(ret, 0);
     assert_eq!(unsafe { BUF[..1048576 * 100].to_vec() }, [0; 1048576 * 100]);
-    assert_eq!(unsafe { BUF[1048576 * 100..1048576 * 200].to_vec() }, [0; 1048576 * 100]);
-    assert_eq!(unsafe { BUF[1048576 * 200..1048576 * 300].to_vec() }, [0; 1048576 * 100]);
-    assert_eq!(unsafe { BUF[1048576 * 300..1048576 * 400].to_vec() }, [0; 1048576 * 100]);
+    assert_eq!(
+        unsafe { BUF[1048576 * 100..1048576 * 200].to_vec() },
+        [0; 1048576 * 100]
+    );
+    assert_eq!(
+        unsafe { BUF[1048576 * 200..1048576 * 300].to_vec() },
+        [0; 1048576 * 100]
+    );
+    assert_eq!(
+        unsafe { BUF[1048576 * 300..1048576 * 400].to_vec() },
+        [0; 1048576 * 100]
+    );
     assert_eq!(unsafe { BUF[1048576 * 400..].to_vec() }, [0; 1048576 * 100]);
     unsafe {
         I = 0;
