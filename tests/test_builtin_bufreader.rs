@@ -73,7 +73,7 @@ fn test_file_read_default() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let file = unsafe { FileReader::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read(&mut big_buffer).unwrap();
@@ -101,7 +101,7 @@ fn test_file_read_with_cap() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let file = unsafe { FileReader::new("./").unwrap() };
     let mut reader = BufReader::with_capacity(20 * 1048576, file);
     let mut big_buffer = Vec::new();
     big_buffer.resize(20 * 1048576, 0);
@@ -125,7 +125,7 @@ fn test_file_read_line() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let file = unsafe { FileReader::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = String::new();
     reader.read_line(&mut big_buffer).unwrap();
@@ -147,7 +147,7 @@ fn test_file_read_all() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let file = unsafe { FileReader::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_to_end(&mut big_buffer).unwrap();
@@ -173,7 +173,7 @@ fn test_file_read_exact() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let file = unsafe { FileReader::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_exact(&mut big_buffer).unwrap();
@@ -206,7 +206,7 @@ fn test_internet_read_default() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let file = unsafe { Internet::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read(&mut big_buffer).unwrap();
@@ -234,7 +234,7 @@ fn test_internet_read_with_cap() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let file = unsafe { Internet::new("./").unwrap() };
     let mut reader = BufReader::with_capacity(20 * 1048576, file);
     let mut big_buffer = Vec::new();
     big_buffer.resize(20 * 1048576, 0);
@@ -258,7 +258,7 @@ fn test_internet_read_line() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let file = unsafe { Internet::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = String::new();
     reader.read_line(&mut big_buffer).unwrap();
@@ -280,7 +280,7 @@ fn test_internet_read_all() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let file = unsafe { Internet::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_to_end(&mut big_buffer).unwrap();
@@ -306,7 +306,7 @@ fn test_internet_read_exact() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let file = unsafe { Internet::new("./").unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_exact(&mut big_buffer).unwrap();

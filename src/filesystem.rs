@@ -2,7 +2,7 @@ use std::io::Error;
 
 mod import_function {
     extern "C" {
-        pub fn remove_file(ptr_to_path: u64, length_path: u64) -> u32;
+        pub fn remove_filesystem_entry(ptr_to_path: u64, length_path: u64) -> u32;
         pub fn move_file(
             ptr_to_new_path: u64,
             length_new_path: u64,
@@ -15,8 +15,8 @@ mod import_function {
     }
 }
 
-pub unsafe fn remove_file(path: &str) -> std::io::Result<()> {
-    let ret = import_function::remove_file(path.as_ptr() as u64, path.len() as u64);
+pub unsafe fn remove_filesystem_entry(path: &str) -> std::io::Result<()> {
+    let ret = import_function::remove_filesystem_entry(path.as_ptr() as u64, path.len() as u64);
     if ret == 0 {
         return Err(Error::new(
             std::io::ErrorKind::Other,

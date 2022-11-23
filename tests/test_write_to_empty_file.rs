@@ -50,7 +50,7 @@ pub unsafe extern "C" fn flush(_identifier: i64) -> u32 {
 #[test]
 #[serial]
 fn test_write_buffer_1gb() {
-    let mut file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileWriter::new("./").unwrap() };
     let mut buffer = vec![128; 1073741824];
     match file.write(&mut buffer) {
         Ok(_) => panic!("Should panic"),
@@ -65,7 +65,7 @@ fn test_write_buffer_1gb() {
 #[test]
 #[serial]
 fn test_write_buffer_100mb() {
-    let mut file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileWriter::new("./").unwrap() };
     let mut buffer = vec![128; 1048576 * 100];
     match file.write(&mut buffer) {
         Ok(_) => panic!("Should panic"),
@@ -80,7 +80,7 @@ fn test_write_buffer_100mb() {
 #[test]
 #[serial]
 fn test_write_buffer_100kb() {
-    let mut file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileWriter::new("./").unwrap() };
     let mut buffer = vec![128; 1024 * 100];
     match file.write(&mut buffer) {
         Ok(_) => panic!("Should panic"),
@@ -95,7 +95,7 @@ fn test_write_buffer_100kb() {
 #[test]
 #[serial]
 fn test_write_buffer_empty() {
-    let mut file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileWriter::new("./").unwrap() };
     let mut buffer = vec![];
     let ret = file.write(&mut buffer).unwrap();
     assert_eq!(ret, 0);

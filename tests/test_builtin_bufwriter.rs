@@ -54,7 +54,7 @@ pub unsafe extern "C" fn flush(_identifier: i64) -> u32 {
 #[serial]
 fn test_file_write() {
     let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
-    let file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let file = unsafe { FileWriter::new("./").unwrap() };
     let mut writer = BufWriter::new(file);
     let ret = writer.write(test_case).unwrap();
     // flush to ensure the buffer wrapped by the BufWriter is all written in the file
@@ -65,7 +65,7 @@ fn test_file_write() {
     assert_eq!(unsafe { FILE.to_vec() }, expected);
 
     let test_case = [99; 1 * 1048576];
-    let file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let file = unsafe { FileWriter::new("./").unwrap() };
     let mut writer = BufWriter::new(file);
     let ret = writer.write(&test_case).unwrap();
     writer.flush().unwrap();
@@ -84,7 +84,7 @@ fn test_file_write() {
 #[serial]
 fn test_file_write_all() {
     let test_case = "Hi wasmer.\nGood to see you.\n".as_bytes();
-    let file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let file = unsafe { FileWriter::new("./").unwrap() };
     let mut writer = BufWriter::new(file);
     writer.write_all(test_case).unwrap();
     // flush to ensure the buffer wrapped by the BufWriter is all written in the file
@@ -94,7 +94,7 @@ fn test_file_write_all() {
     assert_eq!(unsafe { FILE.to_vec() }, expected);
 
     let test_case = [99; 1 * 1048576];
-    let file = unsafe { FileWriter::new("./".to_string()).unwrap() };
+    let file = unsafe { FileWriter::new("./").unwrap() };
     let mut writer = BufWriter::new(file);
     writer.write_all(&test_case).unwrap();
     writer.flush().unwrap();

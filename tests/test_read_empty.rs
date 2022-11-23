@@ -63,7 +63,7 @@ pub unsafe extern "C" fn buffer_size() -> u32 {
 #[test]
 #[serial]
 fn test_read_file_empty_buffer_1gb() {
-    let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileReader::new("./").unwrap() };
     let mut buffer = vec![0; 1073741824];
     let len = file.read(&mut buffer).unwrap();
     buffer = buffer[..len].to_vec();
@@ -75,7 +75,7 @@ fn test_read_file_empty_buffer_1gb() {
 #[test]
 #[serial]
 fn test_read_file_empty_buffer_1mb() {
-    let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileReader::new("./").unwrap() };
     let mut buffer = vec![0; 1024 * 1024];
     let len = file.read(&mut buffer).unwrap();
     buffer = buffer[..len].to_vec();
@@ -87,7 +87,7 @@ fn test_read_file_empty_buffer_1mb() {
 #[test]
 #[serial]
 fn test_read_file_empty_buffer_1kb() {
-    let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileReader::new("./").unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -106,7 +106,7 @@ fn test_read_file_empty_buffer_1kb() {
 #[test]
 #[serial]
 fn test_read_file_empty_buffer_0byte() {
-    let mut file = unsafe { FileReader::new("./".to_string()).unwrap() };
+    let mut file = unsafe { FileReader::new("./").unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![];
     let mut len = file.read(&mut buffer).unwrap();
@@ -127,7 +127,7 @@ fn test_read_file_empty_buffer_0byte() {
 #[test]
 #[serial]
 fn test_read_internet_empty_buffer_1gb() {
-    let mut file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut file = unsafe { Internet::new("./").unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1073741824];
     let mut len = file.read(&mut buffer).unwrap();
@@ -146,7 +146,7 @@ fn test_read_internet_empty_buffer_1gb() {
 #[test]
 #[serial]
 fn test_read_internet_empty_buffer_1mb() {
-    let mut file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut file = unsafe { Internet::new("./").unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024 * 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -165,7 +165,7 @@ fn test_read_internet_empty_buffer_1mb() {
 #[test]
 #[serial]
 fn test_read_internet_empty_buffer_1kb() {
-    let mut file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut file = unsafe { Internet::new("./").unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -184,7 +184,7 @@ fn test_read_internet_empty_buffer_1kb() {
 #[test]
 #[serial]
 fn test_read_internet_empty_buffer_0byte() {
-    let mut file = unsafe { Internet::new("./".to_string()).unwrap() };
+    let mut file = unsafe { Internet::new("./").unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![];
     let mut len = file.read(&mut buffer).unwrap();
