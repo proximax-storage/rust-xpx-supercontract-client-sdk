@@ -46,7 +46,7 @@ pub unsafe extern "C" fn read_from_internet(_identifier: i64, ptr_to_write: u64)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn open_connection(_ptr_to_url: u64, _length_url: u64) -> i64 {
+pub unsafe extern "C" fn open_connection(_ptr_to_url: u64, _length_url: u64, _soft_revocation_mode: u8) -> i64 {
     return 10000000;
 }
 
@@ -124,7 +124,7 @@ fn test_read_file_16kb_buffer_0byte() {
 #[test]
 #[serial]
 fn test_read_internet_16kb_buffer_1gb() {
-    let mut file = unsafe { Internet::new("./").unwrap() };
+    let mut file = unsafe { Internet::new("./", true).unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1073741824];
     let mut len = file.read(&mut buffer).unwrap();
@@ -143,7 +143,7 @@ fn test_read_internet_16kb_buffer_1gb() {
 #[test]
 #[serial]
 fn test_read_internet_16kb_buffer_1mb() {
-    let mut file = unsafe { Internet::new("./").unwrap() };
+    let mut file = unsafe { Internet::new("./", true).unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024 * 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -162,7 +162,7 @@ fn test_read_internet_16kb_buffer_1mb() {
 #[test]
 #[serial]
 fn test_read_internet_16kb_buffer_1kb() {
-    let mut file = unsafe { Internet::new("./").unwrap() };
+    let mut file = unsafe { Internet::new("./", true).unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -181,7 +181,7 @@ fn test_read_internet_16kb_buffer_1kb() {
 #[test]
 #[serial]
 fn test_read_internet_16kb_buffer_0byte() {
-    let mut file = unsafe { Internet::new("./").unwrap() };
+    let mut file = unsafe { Internet::new("./", true).unwrap() };
     let mut big_buffer = Vec::new();
     let mut buffer = vec![];
     let mut len = file.read(&mut buffer).unwrap();

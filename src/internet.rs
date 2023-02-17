@@ -5,9 +5,8 @@ use std::{
     io::{Error, Read},
 };
 
-// I changed the memory addresses (ptr_to_something) to u64 becuase my machine is a 64-bit system
 extern "C" {
-    fn open_connection(ptr_to_url: u64, length_url: u64) -> i64;
+    fn open_connection(ptr_to_url: u64, length_url: u64, soft_revocation_mode: u8) -> i64;
     fn read_from_internet(identifier: i64, ptr_to_write: u64) -> i64; // will return -1 if fail
     fn close_connection(identifier: i64) -> u32;
 }
@@ -19,8 +18,10 @@ pub struct Internet {
 }
 
 impl Internet {
-    pub unsafe fn new(url: &str) -> Result<Self, Error> {
-        let id = open_connection(url.as_ptr() as u64, url.len() as u64);
+    pub unsafe fn new(url: &str, soft_revocation_mode: bool) -> Result<Self, Error> {
+        let id = open_connection(url.as_ptr() as u64,
+                                 url.len() as u64,
+                                 soft_revocation_mode as u8);
         if id < 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,

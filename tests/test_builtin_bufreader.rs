@@ -50,7 +50,7 @@ pub unsafe extern "C" fn read_from_internet(_identifier: i64, ptr_to_write: u64)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn open_connection(_ptr_to_url: u64, _length_url: u64) -> i64 {
+pub unsafe extern "C" fn open_connection(_ptr_to_url: u64, _length_url: u64, _soft_revocation_mode: u8) -> i64 {
     return 10000000;
 }
 
@@ -206,7 +206,7 @@ fn test_internet_read_default() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./").unwrap() };
+    let file = unsafe { Internet::new("./", true).unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read(&mut big_buffer).unwrap();
@@ -234,7 +234,7 @@ fn test_internet_read_with_cap() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./").unwrap() };
+    let file = unsafe { Internet::new("./", true).unwrap() };
     let mut reader = BufReader::with_capacity(20 * 1048576, file);
     let mut big_buffer = Vec::new();
     big_buffer.resize(20 * 1048576, 0);
@@ -258,7 +258,7 @@ fn test_internet_read_line() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./").unwrap() };
+    let file = unsafe { Internet::new("./", true).unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = String::new();
     reader.read_line(&mut big_buffer).unwrap();
@@ -280,7 +280,7 @@ fn test_internet_read_all() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./").unwrap() };
+    let file = unsafe { Internet::new("./", true).unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_to_end(&mut big_buffer).unwrap();
@@ -306,7 +306,7 @@ fn test_internet_read_exact() {
             FILE[i] = *test_case.get(i).unwrap();
         }
     }
-    let file = unsafe { Internet::new("./").unwrap() };
+    let file = unsafe { Internet::new("./", true).unwrap() };
     let mut reader = BufReader::new(file);
     let mut big_buffer = Vec::new();
     reader.read_exact(&mut big_buffer).unwrap();
