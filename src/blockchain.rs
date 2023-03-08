@@ -24,6 +24,10 @@ mod import_function {
             ptr_to_parameters: u64,
             length_parameters: u64,
         ) -> u64;
+        pub fn set_transaction(
+            ptr_to_transaction: u64,
+            length_transaction: u64,
+        ) -> u64;
         pub fn get_transaction_block_height(ptr: u64) -> u64;
         pub fn get_response_transaction_hash(ptr_to_read: u64, ptr_to_write: u64) -> u64;
         pub fn get_transaction_content(ptr_to_read: u64, ptr_to_write: u64) -> u64;
@@ -144,4 +148,68 @@ pub unsafe fn get_transaction_content(hash: String) -> String {
         hash_buffer.as_mut_ptr() as u64,
     );
     return String::from_utf8_unchecked(hash_buffer[..ret as usize].to_vec());
+}
+
+struct EmbeddedTransaction {
+    entity_version: u8,
+    version: u8,
+    payload: Vec<u8>,
+}
+
+impl EmbeddedTransaction {
+    fn get_entity_version(&self) -> u8 {
+        return self.entity_version;
+    }
+
+    fn set_entity_version(&mut self, entity_version: u8) {
+        self.entity_version = entity_version;
+    }
+
+    fn get_version(&self) -> u8 {
+        return self.version;
+    }
+
+    fn set_version(&mut self, version: u8) {
+        self.version = version;
+    }
+
+    fn get_payload(&self) -> &Vec<u8> {
+        return &self.payload
+    }
+
+    fn set_payload(&mut self, payload: Vec<u8>) {
+        self.payload = payload;
+    }
+
+}
+
+pub struct AggregateTranction {
+    max_fee: u64,
+    embedded_transactions: Vec<EmbeddedTransaction>,
+}
+
+impl AggregateTranction {
+    fn get_max_fee(&self) -> u64 {
+        return self.max_fee;
+    }
+
+    fn set_max_fee(&mut self, max_fee: u64) {
+        self.max_fee = max_fee;
+    }
+
+    fn get_embedded_transactions(&self) -> &Vec<EmbeddedTransaction> {
+        &self.embedded_transactions
+    }
+
+}
+pub unsafe fn set_transaction(transaction: &AggregateTranction) -> Vec<u8> {
+    let mut bytes = transaction.get_max_fee().to_le_bytes().to_vec();
+    bytes.extend_from_slice(&transaction.get_embedded_transactions().len().to_le_bytes());
+    for value in transaction.get_embedded_transactions().iter() {
+        bytes.extend_from_slice(&value.entity_version.to_le_bytes());
+        bytes.extend_from_slice(&value.version.to_le_bytes());
+        bytes.extend_from_slice(&value.payload.len().to_le_bytes());
+        bytes.extend_from_slice(&value.payload);
+    }
+    return bytes
 }
