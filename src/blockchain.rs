@@ -24,10 +24,7 @@ mod import_function {
             ptr_to_parameters: u64,
             length_parameters: u64,
         ) -> u64;
-        pub fn set_transaction(
-            ptr_to_transaction: u64,
-            length_transaction: u64,
-        ) -> u64;
+        pub fn set_transaction(ptr_to_transaction: u64, length_transaction: u64);
         pub fn get_transaction_block_height(ptr: u64) -> u64;
         pub fn get_response_transaction_hash(ptr_to_read: u64, ptr_to_write: u64) -> u64;
         pub fn get_transaction_content(ptr_to_read: u64, ptr_to_write: u64) -> u64;
@@ -150,66 +147,76 @@ pub unsafe fn get_transaction_content(hash: String) -> String {
     return String::from_utf8_unchecked(hash_buffer[..ret as usize].to_vec());
 }
 
-struct EmbeddedTransaction {
-    entity_version: u8,
-    version: u8,
+#[derive(Default)]
+pub struct EmbeddedTransaction {
+    entity_type: u16,
+    version: u32,
     payload: Vec<u8>,
 }
 
 impl EmbeddedTransaction {
-    fn get_entity_version(&self) -> u8 {
-        return self.entity_version;
+    pub fn get_entity_type(&self) -> u16 {
+        return self.entity_type;
     }
 
-    fn set_entity_version(&mut self, entity_version: u8) {
-        self.entity_version = entity_version;
+    pub fn set_entity_type(&mut self, entity_type: u16) {
+        self.entity_type = entity_type;
     }
 
-    fn get_version(&self) -> u8 {
+    pub fn get_version(&self) -> u32 {
         return self.version;
     }
 
-    fn set_version(&mut self, version: u8) {
+    pub fn set_version(&mut self, version: u32) {
         self.version = version;
     }
 
-    fn get_payload(&self) -> &Vec<u8> {
+    pub fn get_payload(&self) -> &Vec<u8> {
         return &self.payload
     }
 
-    fn set_payload(&mut self, payload: Vec<u8>) {
+    pub fn set_payload(&mut self, payload: Vec<u8>) {
         self.payload = payload;
     }
 
 }
 
+#[derive(Default)]
 pub struct AggregateTranction {
     max_fee: u64,
     embedded_transactions: Vec<EmbeddedTransaction>,
 }
 
 impl AggregateTranction {
-    fn get_max_fee(&self) -> u64 {
+    pub fn get_max_fee(&self) -> u64 {
         return self.max_fee;
     }
 
-    fn set_max_fee(&mut self, max_fee: u64) {
+    pub fn set_max_fee(&mut self, max_fee: u64) {
         self.max_fee = max_fee;
     }
 
-    fn get_embedded_transactions(&self) -> &Vec<EmbeddedTransaction> {
+    pub fn get_embedded_transactions(&self) -> &Vec<EmbeddedTransaction> {
         &self.embedded_transactions
     }
 
+    pub fn add_embedded_transaction(&mut self, new_embedded_transaction: EmbeddedTransaction) {
+        self.embedded_transactions.push(new_embedded_transaction);
+    }
+
 }
-pub unsafe fn set_transaction(transaction: &AggregateTranction) -> Vec<u8> {
+
+pub unsafe fn set_transaction(transaction: &AggregateTranction) {
     let mut bytes = transaction.get_max_fee().to_le_bytes().to_vec();
-    bytes.extend_from_slice(&transaction.get_embedded_transactions().len().to_le_bytes());
+    let embedded_transaction_size = transaction.get_embedded_transactions().len() as u16;
+    bytes.extend_from_slice(&embedded_transaction_size.to_le_bytes());
     for value in transaction.get_embedded_transactions().iter() {
-        bytes.extend_from_slice(&value.entity_version.to_le_bytes());
+        bytes.extend_from_slice(&value.entity_type.to_le_bytes());
         bytes.extend_from_slice(&value.version.to_le_bytes());
-        bytes.extend_from_slice(&value.payload.len().to_le_bytes());
+        let payload_size = value.payload.len() as u16;
+        bytes.extend_from_slice(&payload_size.to_le_bytes());
         bytes.extend_from_slice(&value.payload);
     }
-    return bytes
+
+    import_function::set_transaction(bytes.as_ptr() as u64, transaction.get_embedded_transactions().len() as u64);
 }
