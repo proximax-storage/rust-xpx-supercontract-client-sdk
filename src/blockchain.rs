@@ -147,7 +147,7 @@ pub unsafe fn get_transaction_content(hash: String) -> String {
     return String::from_utf8_unchecked(hash_buffer[..ret as usize].to_vec());
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct EmbeddedTransaction {
     entity_type: u16,
     version: u32,
@@ -218,5 +218,5 @@ pub unsafe fn set_transaction(transaction: &AggregateTranction) {
         bytes.extend_from_slice(&value.payload);
     }
 
-    import_function::set_transaction(bytes.as_ptr() as u64, transaction.get_embedded_transactions().len() as u64);
+    import_function::set_transaction(bytes.as_ptr() as u64, bytes.len() as u64);
 }
