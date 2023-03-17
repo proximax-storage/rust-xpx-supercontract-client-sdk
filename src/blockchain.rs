@@ -31,64 +31,81 @@ mod import_function {
     }
 }
 
-pub unsafe fn get_block_height() -> u64 {
-    import_function::get_block_height()
+pub fn get_block_height() -> u64 {
+    unsafe {
+        import_function::get_block_height()
+    }
 }
 
-pub unsafe fn get_block_hash() -> Result<[u8; 32]> {
+pub fn get_block_hash() -> Result<[u8; 32]> {
     let mut hash_buffer = [0; 32];
-    let ret = import_function::get_block_hash(hash_buffer.as_mut_ptr() as u64);
-    if ret != 32 {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            "Failed to retrieve a valid hash",
-        ));
+
+    unsafe {
+        let ret = import_function::get_block_hash(hash_buffer.as_mut_ptr() as u64);
+        if ret != 32 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to retrieve a valid hash",
+            ));
+        }
     }
     return Ok(hash_buffer);
 }
 
-pub unsafe fn get_block_time() -> u64 {
-    import_function::get_block_time()
+pub fn get_block_time() -> u64 {
+    unsafe {
+        import_function::get_block_time()
+    }
 }
 
 pub unsafe fn get_block_generation_time() -> u64 {
     import_function::get_block_generation_time()
 }
 
-pub unsafe fn get_transaction_hash() -> Result<[u8; 32]> {
+pub fn get_transaction_hash() -> Result<[u8; 32]> {
     let mut hash_buffer = [0; 32];
-    let ret = import_function::get_transaction_hash(hash_buffer.as_mut_ptr() as u64);
-    if ret != 32 {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            "Failed to retrieve a valid hash",
-        ));
+
+    unsafe {
+        let ret = import_function::get_transaction_hash(hash_buffer.as_mut_ptr() as u64);
+        if ret != 32 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to retrieve a valid hash",
+            ));
+        }
     }
     return Ok(hash_buffer);
 }
 
-pub unsafe fn get_caller_public_key() -> Result<[u8; 32]> {
+pub fn get_caller_public_key() -> Result<[u8; 32]> {
     let mut hash_buffer = [0; 32];
-    let ret = import_function::get_caller_public_key(hash_buffer.as_mut_ptr() as u64);
-    if ret != 32 {
-        return Err(Error::new(
-            std::io::ErrorKind::Other,
-            "Failed to retrieve a valid hash",
-        ));
+
+    unsafe {
+        let ret = import_function::get_caller_public_key(hash_buffer.as_mut_ptr() as u64);
+        if ret != 32 {
+            return Err(Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to retrieve a valid hash",
+            ));
+        }
     }
     return Ok(hash_buffer);
 }
 
-pub unsafe fn get_sc_prepayment() -> u64 {
-    import_function::get_sc_prepayment()
+pub fn get_sc_prepayment() -> u64 {
+    unsafe {
+        import_function::get_sc_prepayment()
+    }
 }
 
-pub unsafe fn get_sm_prepayment() -> u64 {
-    import_function::get_sm_prepayment()
+pub fn get_sm_prepayment() -> u64 {
+    unsafe {
+        import_function::get_sm_prepayment()
+    }
 }
 
 #[allow(unused_variables)]
-pub unsafe fn add_transaction<T: serde::ser::Serialize>(
+pub fn add_transaction<T: serde::ser::Serialize>(
     tx_name: String,
     param: HashMap<String, T>,
 ) -> Result<[u8; 32]> {
@@ -109,42 +126,53 @@ pub unsafe fn add_transaction<T: serde::ser::Serialize>(
 }
 
 // I assume it will be the same as POST method body (recieving it in JSON format)
-pub unsafe fn get_call_params() -> Result<HashMap<String, String>> {
+pub fn get_call_params() -> Result<HashMap<String, String>> {
     let mut hash_buffer = [0; 32];
-    let len = import_function::get_call_params(hash_buffer.as_mut_ptr() as u64);
-    let serialized_json = String::from_utf8_unchecked(hash_buffer[..len as usize].to_vec());
-    return Ok(serde_json::from_str(&serialized_json)?);
+
+    unsafe {
+        let len = import_function::get_call_params(hash_buffer.as_mut_ptr() as u64);
+        let serialized_json = String::from_utf8_unchecked(hash_buffer[..len as usize].to_vec());
+        return Ok(serde_json::from_str(&serialized_json)?);
+    }
 }
 
-pub unsafe fn get_service_payment() -> u64 {
-    import_function::get_service_payment()
+pub fn get_service_payment() -> u64 {
+    unsafe {
+        import_function::get_service_payment()
+    }
 }
 
-pub unsafe fn get_transaction_block_height(hash: [u8; 32]) -> u64 {
-    return import_function::get_transaction_block_height(hash.as_ptr() as u64);
+pub fn get_transaction_block_height(hash: [u8; 32]) -> u64 {
+    unsafe {
+        return import_function::get_transaction_block_height(hash.as_ptr() as u64);
+    }
 }
 
-pub unsafe fn get_response_transaction_hash(hash: [u8; 32]) -> Option<[u8; 32]> {
+pub fn get_response_transaction_hash(hash: [u8; 32]) -> Option<[u8; 32]> {
     let mut hash_buffer = [0; 32];
-    let ret = import_function::get_response_transaction_hash(
-        hash.as_ptr() as u64,
-        hash_buffer.as_mut_ptr() as u64,
-    );
-    if ret == 0 {
-        return None;
+    unsafe {
+        let ret = import_function::get_response_transaction_hash(
+            hash.as_ptr() as u64,
+            hash_buffer.as_mut_ptr() as u64,
+        );
+        if ret == 0 {
+            return None;
+        }
     }
     return Some(hash_buffer);
 }
 
 // Is this JSON in String?
-pub unsafe fn get_transaction_content(hash: String) -> String {
+pub fn get_transaction_content(hash: String) -> String {
     let mut hash_buffer = [0; 32];
     let hash = hash.as_bytes();
-    let ret = import_function::get_transaction_content(
-        hash.as_ptr() as u64,
-        hash_buffer.as_mut_ptr() as u64,
-    );
-    return String::from_utf8_unchecked(hash_buffer[..ret as usize].to_vec());
+    unsafe {
+        let ret = import_function::get_transaction_content(
+            hash.as_ptr() as u64,
+            hash_buffer.as_mut_ptr() as u64,
+        );
+        return String::from_utf8_unchecked(hash_buffer[..ret as usize].to_vec());
+    }
 }
 
 #[derive(Default, Clone)]
@@ -206,7 +234,7 @@ impl AggregateTranction {
 
 }
 
-pub unsafe fn set_transaction(transaction: &AggregateTranction) {
+pub fn set_transaction(transaction: &AggregateTranction) {
     let mut bytes = transaction.get_max_fee().to_le_bytes().to_vec();
     let embedded_transaction_size = transaction.get_embedded_transactions().len() as u16;
     bytes.extend_from_slice(&embedded_transaction_size.to_le_bytes());
@@ -218,5 +246,7 @@ pub unsafe fn set_transaction(transaction: &AggregateTranction) {
         bytes.extend_from_slice(&value.payload);
     }
 
-    import_function::set_transaction(bytes.as_ptr() as u64, bytes.len() as u64);
+    unsafe {
+        import_function::set_transaction(bytes.as_ptr() as u64, bytes.len() as u64);
+    }
 }
