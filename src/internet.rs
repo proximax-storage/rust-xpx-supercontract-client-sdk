@@ -18,10 +18,12 @@ pub struct Internet {
 }
 
 impl Internet {
-    pub unsafe fn new(url: &str, soft_revocation_mode: bool) -> Result<Self, Error> {
-        let id = open_connection(url.as_ptr() as u64,
-                                 url.len() as u64,
-                                 soft_revocation_mode as u8);
+    pub fn new(url: &str, soft_revocation_mode: bool) -> Result<Self, Error> {
+        let id = unsafe {
+            open_connection(url.as_ptr() as u64,
+                            url.len() as u64,
+                            soft_revocation_mode as u8)
+        };
         if id < 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,
@@ -31,7 +33,7 @@ impl Internet {
         Ok(Self {
             id,
             buffer: VecDeque::new(),
-            size: buffer_size() as usize,
+            size: unsafe { buffer_size() } as usize,
         })
     }
 

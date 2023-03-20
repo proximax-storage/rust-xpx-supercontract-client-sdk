@@ -51,14 +51,16 @@ impl Write for FileWriter {
 }
 
 impl FileWriter {
-    pub unsafe fn new(path: &str) -> Result<Self, Error> {
+    pub fn new(path: &str) -> Result<Self, Error> {
         let mode = "w";
-        let id = open_file(
-            path.as_ptr() as u64,
-            path.len() as u64,
-            mode.as_ptr() as u64,
-            mode.len() as u64,
-        );
+        let id = unsafe {
+            open_file(
+                path.as_ptr() as u64,
+                path.len() as u64,
+                mode.as_ptr() as u64,
+                mode.len() as u64,
+            )
+        };
         if id < 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,
@@ -67,7 +69,7 @@ impl FileWriter {
         }
         Ok(Self {
             id,
-            buffer_size: buffer_size(),
+            buffer_size: unsafe { buffer_size() },
         })
     }
 }
@@ -105,14 +107,16 @@ impl Read for FileReader {
 }
 
 impl FileReader {
-    pub unsafe fn new(path: &str) -> Result<Self, Error> {
+    pub fn new(path: &str) -> Result<Self, Error> {
         let mode = "r";
-        let id = open_file(
-            path.as_ptr() as u64,
-            path.len() as u64,
-            mode.as_ptr() as u64,
-            mode.len() as u64,
-        );
+        let id = unsafe {
+            open_file(
+                path.as_ptr() as u64,
+                path.len() as u64,
+                mode.as_ptr() as u64,
+                mode.len() as u64,
+            )
+        };
         if id < 0 {
             return Err(Error::new(
                 std::io::ErrorKind::Other,
@@ -122,7 +126,7 @@ impl FileReader {
         Ok(Self {
             id,
             buffer: VecDeque::new(),
-            size: buffer_size() as usize,
+            size: unsafe { buffer_size() } as usize,
         })
     }
 

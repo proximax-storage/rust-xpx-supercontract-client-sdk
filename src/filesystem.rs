@@ -15,8 +15,10 @@ mod import_function {
     }
 }
 
-pub unsafe fn remove_filesystem_entry(path: &str) -> std::io::Result<()> {
-    let ret = import_function::remove_filesystem_entry(path.as_ptr() as u64, path.len() as u64);
+pub fn remove_filesystem_entry(path: &str) -> std::io::Result<()> {
+    let ret = unsafe {
+        import_function::remove_filesystem_entry(path.as_ptr() as u64, path.len() as u64)
+    };
     if ret == 0 {
         return Err(Error::new(
             std::io::ErrorKind::Other,
@@ -26,13 +28,15 @@ pub unsafe fn remove_filesystem_entry(path: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub unsafe fn move_file(path: &str, new_path: &str) -> std::io::Result<()> {
-    let ret = import_function::move_file(
-        new_path.as_ptr() as u64,
-        new_path.len() as u64,
-        path.as_ptr() as u64,
-        path.len() as u64,
-    );
+pub fn move_file(path: &str, new_path: &str) -> std::io::Result<()> {
+    let ret = unsafe {
+        import_function::move_file(
+            new_path.as_ptr() as u64,
+            new_path.len() as u64,
+            path.as_ptr() as u64,
+            path.len() as u64,
+        )
+    };
     if ret == 0 {
         return Err(Error::new(
             std::io::ErrorKind::Other,
@@ -42,24 +46,30 @@ pub unsafe fn move_file(path: &str, new_path: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub unsafe fn path_exists(path: &str) -> bool {
-    let res = import_function::path_exists(path.as_ptr() as u64, path.len() as u64);
+pub fn path_exists(path: &str) -> bool {
+    let res = unsafe {
+        import_function::path_exists(path.as_ptr() as u64, path.len() as u64)
+    };
     if res == 0 {
         return false;
     }
     true
 }
 
-pub unsafe fn is_file(path: &str) -> bool {
-    let res = import_function::is_file(path.as_ptr() as u64, path.len() as u64);
+pub fn is_file(path: &str) -> bool {
+    let res = unsafe {
+        import_function::is_file(path.as_ptr() as u64, path.len() as u64)
+    };
     if res == 0 {
         return false;
     }
     true
 }
 
-pub unsafe fn create_dir(path: &str) -> std::io::Result<()> {
-    let res = import_function::create_dir(path.as_ptr() as u64, path.len() as u64);
+pub fn create_dir(path: &str) -> std::io::Result<()> {
+    let res = unsafe {
+        import_function::create_dir(path.as_ptr() as u64, path.len() as u64)
+    };
     if res == 0 {
         return Err(Error::new(
             std::io::ErrorKind::Other,

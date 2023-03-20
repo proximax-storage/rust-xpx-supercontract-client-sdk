@@ -1,7 +1,6 @@
 use sdk::{file::FileReader, internet::Internet};
 use serial_test::serial;
 use std::{cmp::min, io::Read};
-use std::time::{Instant, SystemTime};
 
 static mut BUF: [u8; 16384 * 1024] = [99; 16384 * 1024];
 static mut I: usize = 0;
@@ -65,7 +64,7 @@ pub unsafe extern "C" fn buffer_size() -> u32 {
 #[test]
 #[serial]
 fn test_read_file_16mb_buffer_1gb() {
-    let mut file = unsafe { FileReader::new("./").unwrap() };
+    let mut file = FileReader::new("./").unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1073741824];
     let len = file.read(&mut buffer).unwrap();
@@ -78,7 +77,7 @@ fn test_read_file_16mb_buffer_1gb() {
 #[test]
 #[serial]
 fn test_read_file_16mb_buffer_1mb() {
-    let mut file = unsafe { FileReader::new("./").unwrap() };
+    let mut file = FileReader::new("./").unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024 * 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -86,15 +85,9 @@ fn test_read_file_16mb_buffer_1mb() {
     big_buffer.append(&mut tmp_buffer);
     assert_eq!(big_buffer, vec![99; 1024 * 1024]); // Max buffer size in the file class is 1mb only
     while len > 0 {
-        let start = Instant::now();
         len = file.read(&mut buffer).unwrap();
-        let elapsed = start.elapsed();
-        println!("Elapsed: {}", elapsed.as_micros());
-        let s = Instant::now();
         tmp_buffer = buffer[..len].to_vec();
         big_buffer.append(&mut tmp_buffer);
-        let e = s.elapsed().as_micros();
-        println!("Elapsed 2: {}", e);
     }
     assert_eq!(big_buffer, vec![99; 16384 * 1024]);
     unsafe { I = 0 };
@@ -103,7 +96,7 @@ fn test_read_file_16mb_buffer_1mb() {
 #[test]
 #[serial]
 fn test_read_file_16mb_buffer_1kb() {
-    let mut file = unsafe { FileReader::new("./").unwrap() };
+    let mut file = FileReader::new("./").unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -122,7 +115,7 @@ fn test_read_file_16mb_buffer_1kb() {
 #[test]
 #[serial]
 fn test_read_file_16mb_buffer_0byte() {
-    let mut file = unsafe { FileReader::new("./").unwrap() };
+    let mut file = FileReader::new("./").unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![];
     let mut len = file.read(&mut buffer).unwrap();
@@ -142,7 +135,7 @@ fn test_read_file_16mb_buffer_0byte() {
 #[test]
 #[serial]
 fn test_read_internet_16mb_buffer_1gb() {
-    let mut file = unsafe { Internet::new("./", true).unwrap() };
+    let mut file = Internet::new("./", true).unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1073741824];
     let len = file.read(&mut buffer).unwrap();
@@ -155,7 +148,7 @@ fn test_read_internet_16mb_buffer_1gb() {
 #[test]
 #[serial]
 fn test_read_internet_16mb_buffer_1mb() {
-    let mut file = unsafe { Internet::new("./", true).unwrap() };
+    let mut file = Internet::new("./", true).unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024 * 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -174,7 +167,7 @@ fn test_read_internet_16mb_buffer_1mb() {
 #[test]
 #[serial]
 fn test_read_internet_16mb_buffer_1kb() {
-    let mut file = unsafe { Internet::new("./", true).unwrap() };
+    let mut file = Internet::new("./", true).unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![0; 1024];
     let mut len = file.read(&mut buffer).unwrap();
@@ -193,7 +186,7 @@ fn test_read_internet_16mb_buffer_1kb() {
 #[test]
 #[serial]
 fn test_read_internet_16mb_buffer_0byte() {
-    let mut file = unsafe { Internet::new("./", true).unwrap() };
+    let mut file = Internet::new("./", true).unwrap();
     let mut big_buffer = Vec::new();
     let mut buffer = vec![];
     let mut len = file.read(&mut buffer).unwrap();
