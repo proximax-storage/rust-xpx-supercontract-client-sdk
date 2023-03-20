@@ -1,6 +1,7 @@
 use sdk::{file::FileReader, internet::Internet};
 use serial_test::serial;
 use std::{cmp::min, io::Read};
+use std::time::{Instant, SystemTime};
 
 static mut BUF: [u8; 16384 * 1024] = [99; 16384 * 1024];
 static mut I: usize = 0;
@@ -85,9 +86,15 @@ fn test_read_file_16mb_buffer_1mb() {
     big_buffer.append(&mut tmp_buffer);
     assert_eq!(big_buffer, vec![99; 1024 * 1024]); // Max buffer size in the file class is 1mb only
     while len > 0 {
+        let start = Instant::now();
         len = file.read(&mut buffer).unwrap();
+        let elapsed = start.elapsed();
+        println!("Elapsed: {}", elapsed.as_micros());
+        let s = Instant::now();
         tmp_buffer = buffer[..len].to_vec();
         big_buffer.append(&mut tmp_buffer);
+        let e = s.elapsed().as_micros();
+        println!("Elapsed 2: {}", e);
     }
     assert_eq!(big_buffer, vec![99; 16384 * 1024]);
     unsafe { I = 0 };

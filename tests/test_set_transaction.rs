@@ -1,4 +1,4 @@
-use sdk::blockchain::{AggregateTranction, EmbeddedTransaction, set_transaction as other_set_transaction};
+use sdk::blockchain::{AggregateTransaction, EmbeddedTransaction};
 
 fn read16 (offset: usize, ptr: &Vec<u8>) -> u16 {
     let x = u16::from_le_bytes(ptr[offset .. offset+2].try_into().unwrap());
@@ -21,10 +21,9 @@ static PAYLOAD: [u8; 4] = [0u8, 1u8, 2u8, 3u8];
 static MAX_FEE: u64 = 1;
 static EMBEDDED_SIZE: u16 = 3;
 
-// function to read vec of bytes
 #[no_mangle]
 pub extern "C" fn set_transaction(ptr_to_transaction: u64, length_transaction: u64) {
-    let mut aggregate: AggregateTranction = AggregateTranction::default();
+    let mut aggregate: AggregateTransaction = AggregateTransaction::default();
     let ptr = ptr_to_transaction as *mut u8;
     let mut buffer = Vec::new();
     buffer.resize(length_transaction as usize, 0);
@@ -61,7 +60,7 @@ pub extern "C" fn set_transaction(ptr_to_transaction: u64, length_transaction: u
 #[test]
 fn test_set_transaction() {
     // Arrange:
-    let mut aggregate = AggregateTranction::default();
+    let mut aggregate = AggregateTransaction::default();
     aggregate.set_max_fee(MAX_FEE);
     for _ in 0..EMBEDDED_SIZE {
         let mut embedded = EmbeddedTransaction::default();
@@ -72,6 +71,6 @@ fn test_set_transaction() {
     }
     
     // Act:
-    other_set_transaction(&aggregate);
+    sdk::blockchain::set_transaction(&aggregate);
 
 }

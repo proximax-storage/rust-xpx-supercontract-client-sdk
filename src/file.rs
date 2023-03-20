@@ -4,7 +4,6 @@ use std::{
     io::{Error, Read, Write},
 };
 
-// I changed the memory addresses (ptr_to_something) to u64 becuase my machine is a 64-bit system
 extern "C" {
     fn read_file_stream(identifier: i64, ptr_to_write: u64) -> i64; // it will return -1 if fail
     fn write_file_stream(identifier: i64, ptr_to_buffer: u64, length_buffer: u64) -> i64; // it will return -1 if fail
@@ -131,7 +130,6 @@ impl FileReader {
         let mut ret = self.size as i64;
         let mut subarray = Vec::new();
         subarray.resize(self.size, 0);
-        // I can't forsee how large the next line is, so I'll just store it and stop calling RPC if exceeding
         while ret > 0 && self.buffer.len() < self.size as usize {
             ret = read_file_stream(self.id, subarray.as_mut_ptr() as u64);
             self.buffer

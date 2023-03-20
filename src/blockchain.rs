@@ -1,33 +1,19 @@
-use std::{
-    collections::HashMap,
-    io::{Error, Result},
-};
-
 mod import_function {
-    #[allow(dead_code)]
-    // I changed the memory addresses (ptr_to_something) to u64 becuase my machine is a 64-bit system
     extern "C" {
         pub fn get_block_height() -> u64;
-        pub fn get_block_hash(ptr_to_write: u64) -> u64;
+        pub fn get_block_hash(ptr_to_write: u64);
         pub fn get_block_time() -> u64;
         pub fn get_block_generation_time() -> u64;
-        pub fn get_transaction_hash(ptr_to_write: u64) -> u64;
-        pub fn get_caller_public_key(ptr_to_write: u64) -> u64;
-        pub fn get_sc_prepayment() -> u64;
-        pub fn get_sm_prepayment() -> u64;
+        pub fn get_transaction_hash(ptr_to_write: u64);
+        pub fn get_caller_public_key(ptr_to_write: u64);
+        pub fn get_contract_public_key(ptr_to_write: u64);
+        pub fn get_execution_payment() -> u64;
+        pub fn get_download_payment() -> u64;
         pub fn get_call_params(return_ptr: u64) -> u64;
-        pub fn get_service_payment() -> u64;
-        pub fn add_transaction(
-            ptr_to_write: u64,
-            ptr_to_name: u64,
-            length_name: u64,
-            ptr_to_parameters: u64,
-            length_parameters: u64,
-        ) -> u64;
+        pub fn get_call_params_length() -> u64;
+        pub fn get_service_payments(return_ptr: u64) -> u64;
         pub fn set_transaction(ptr_to_transaction: u64, length_transaction: u64);
-        pub fn get_transaction_block_height(ptr: u64) -> u64;
-        pub fn get_response_transaction_hash(ptr_to_read: u64, ptr_to_write: u64) -> u64;
-        pub fn get_transaction_content(ptr_to_read: u64, ptr_to_write: u64) -> u64;
+        pub fn buffer_size() -> u64;
     }
 }
 
@@ -37,19 +23,13 @@ pub fn get_block_height() -> u64 {
     }
 }
 
-pub fn get_block_hash() -> Result<[u8; 32]> {
+pub fn get_block_hash() -> [u8; 32] {
     let mut hash_buffer = [0; 32];
 
     unsafe {
-        let ret = import_function::get_block_hash(hash_buffer.as_mut_ptr() as u64);
-        if ret != 32 {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to retrieve a valid hash",
-            ));
-        }
+        import_function::get_block_hash(hash_buffer.as_mut_ptr() as u64);
     }
-    return Ok(hash_buffer);
+    return hash_buffer;
 }
 
 pub fn get_block_time() -> u64 {
@@ -62,117 +42,97 @@ pub unsafe fn get_block_generation_time() -> u64 {
     import_function::get_block_generation_time()
 }
 
-pub fn get_transaction_hash() -> Result<[u8; 32]> {
+pub fn get_transaction_hash() -> [u8; 32] {
     let mut hash_buffer = [0; 32];
 
     unsafe {
-        let ret = import_function::get_transaction_hash(hash_buffer.as_mut_ptr() as u64);
-        if ret != 32 {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to retrieve a valid hash",
-            ));
+        import_function::get_transaction_hash(hash_buffer.as_mut_ptr() as u64);
+    };
+    return hash_buffer;
+}
+
+pub fn get_caller_public_key() -> [u8; 32] {
+    let mut hash_buffer = [0; 32];
+
+    unsafe {
+        import_function::get_caller_public_key(hash_buffer.as_mut_ptr() as u64);
+    };
+
+    return hash_buffer;
+}
+
+pub fn get_contract_public_key() -> [u8; 32] {
+    let mut hash_buffer = [0; 32];
+
+    unsafe {
+        import_function::get_contract_public_key(hash_buffer.as_mut_ptr() as u64);
+    };
+
+    return hash_buffer;
+}
+
+pub fn get_execution_payment() -> u64 {
+    unsafe {
+        import_function::get_execution_payment()
+    }
+}
+
+pub fn get_download_payment() -> u64 {
+    unsafe {
+        import_function::get_download_payment()
+    }
+}
+
+pub fn get_call_params() -> Vec<u8> {
+
+    let params_length = unsafe {
+        import_function::get_call_params_length()
+    };
+
+    let mut buffer: Vec<u8> = vec![0; params_length as usize];
+
+    unsafe {
+        import_function::get_call_params(buffer.as_mut_ptr() as u64);
+    }
+
+    return buffer;
+}
+
+#[derive(Default, Clone)]
+pub struct ServicePayment {
+    pub mosaic_id: u64,
+    pub amount: u64
+}
+
+pub fn get_service_payments() -> Vec<ServicePayment> {
+    let buffer_size = unsafe {
+        import_function::buffer_size()
+    };
+    let mut buffer: Vec<u8> = vec![0; buffer_size as usize];
+
+    let payments_num = unsafe {
+        import_function::get_service_payments(buffer.as_mut_ptr() as u64)
+    };
+
+    let mut payments: Vec<ServicePayment> = Vec::with_capacity(payments_num as usize);
+
+    let mut buffer_tail = buffer.as_slice();
+    for _ in 0..payments_num {
+        let mut payment: ServicePayment = Default::default();
+        {
+            let (number_bytes, tail) = buffer_tail.split_at(std::mem::size_of::<u64>());
+            buffer_tail = tail;
+            payment.mosaic_id = u64::from_le_bytes(number_bytes.try_into().unwrap());
         }
-    }
-    return Ok(hash_buffer);
-}
-
-pub fn get_caller_public_key() -> Result<[u8; 32]> {
-    let mut hash_buffer = [0; 32];
-
-    unsafe {
-        let ret = import_function::get_caller_public_key(hash_buffer.as_mut_ptr() as u64);
-        if ret != 32 {
-            return Err(Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to retrieve a valid hash",
-            ));
+        {
+            let (number_bytes, tail) = buffer_tail.split_at(std::mem::size_of::<u64>());
+            buffer_tail = tail;
+            payment.amount = u64::from_le_bytes(number_bytes.try_into().unwrap());
         }
+        payments.push(payment);
     }
-    return Ok(hash_buffer);
-}
 
-pub fn get_sc_prepayment() -> u64 {
-    unsafe {
-        import_function::get_sc_prepayment()
-    }
-}
-
-pub fn get_sm_prepayment() -> u64 {
-    unsafe {
-        import_function::get_sm_prepayment()
-    }
-}
-
-#[allow(unused_variables)]
-pub fn add_transaction<T: serde::ser::Serialize>(
-    tx_name: String,
-    param: HashMap<String, T>,
-) -> Result<[u8; 32]> {
-    // let tx_name = tx_name.as_bytes();
-    // let param = serde_json::to_string(&param)?; // I assume the Blockchain will recieve it in JSON format like the common POST method
-    // let param = Vec::from(param);
-    // let ret = add_transaction(
-    //     self.buffer.as_mut_ptr() as u64,
-    //     tx_name.as_ptr() as u64,
-    //     tx_name.len() as u64,
-    //     param.as_ptr() as u64,
-    //     param.len() as u64,
-    // );
-    // return Ok(String::from_utf8_unchecked(
-    //     self.buffer[..ret as usize].to_vec(),
-    // ));
-    todo!()
-}
-
-// I assume it will be the same as POST method body (recieving it in JSON format)
-pub fn get_call_params() -> Result<HashMap<String, String>> {
-    let mut hash_buffer = [0; 32];
-
-    unsafe {
-        let len = import_function::get_call_params(hash_buffer.as_mut_ptr() as u64);
-        let serialized_json = String::from_utf8_unchecked(hash_buffer[..len as usize].to_vec());
-        return Ok(serde_json::from_str(&serialized_json)?);
-    }
-}
-
-pub fn get_service_payment() -> u64 {
-    unsafe {
-        import_function::get_service_payment()
-    }
-}
-
-pub fn get_transaction_block_height(hash: [u8; 32]) -> u64 {
-    unsafe {
-        return import_function::get_transaction_block_height(hash.as_ptr() as u64);
-    }
-}
-
-pub fn get_response_transaction_hash(hash: [u8; 32]) -> Option<[u8; 32]> {
-    let mut hash_buffer = [0; 32];
-    unsafe {
-        let ret = import_function::get_response_transaction_hash(
-            hash.as_ptr() as u64,
-            hash_buffer.as_mut_ptr() as u64,
-        );
-        if ret == 0 {
-            return None;
-        }
-    }
-    return Some(hash_buffer);
-}
-
-// Is this JSON in String?
-pub fn get_transaction_content(hash: String) -> String {
-    let mut hash_buffer = [0; 32];
-    let hash = hash.as_bytes();
-    unsafe {
-        let ret = import_function::get_transaction_content(
-            hash.as_ptr() as u64,
-            hash_buffer.as_mut_ptr() as u64,
-        );
-        return String::from_utf8_unchecked(hash_buffer[..ret as usize].to_vec());
-    }
+    return payments;
 }
 
 #[derive(Default, Clone)]
@@ -210,12 +170,12 @@ impl EmbeddedTransaction {
 }
 
 #[derive(Default)]
-pub struct AggregateTranction {
+pub struct AggregateTransaction {
     max_fee: u64,
     embedded_transactions: Vec<EmbeddedTransaction>,
 }
 
-impl AggregateTranction {
+impl AggregateTransaction {
     pub fn get_max_fee(&self) -> u64 {
         return self.max_fee;
     }
@@ -234,7 +194,7 @@ impl AggregateTranction {
 
 }
 
-pub fn set_transaction(transaction: &AggregateTranction) {
+pub fn set_transaction(transaction: &AggregateTransaction) {
     let mut bytes = transaction.get_max_fee().to_le_bytes().to_vec();
     let embedded_transaction_size = transaction.get_embedded_transactions().len() as u16;
     bytes.extend_from_slice(&embedded_transaction_size.to_le_bytes());
