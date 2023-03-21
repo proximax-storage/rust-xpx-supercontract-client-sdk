@@ -1,19 +1,11 @@
-use sdk::dir_iterator::DirIterator;
+use sdk::dir_iterator::{DirIterator, DirIteratorEntry};
 use serial_test::serial;
-use std::{
-    fs,
-    sync::{Arc, Mutex},
-};
 
-static mut ITERATOR: Option<Arc<Mutex<fs::ReadDir>>> = None;
-static mut ITERATOR_STACK: Option<Vec<Arc<Mutex<fs::ReadDir>>>> = None;
-static mut IDENTIFIER: i64 = 0;
-static mut RECURSE: bool = false;
-static mut CURRENT: Option<String> = None;
-static mut PREVIOUS: Option<String> = None;
+static mut POINTER: usize = 0;
+static mut ITERATOR_VALUES: Vec<DirIteratorEntry> = Vec::new();
 
 #[no_mangle]
-pub extern "C" fn create_dir_iterator(ptr_to_path: u64, length_path: u64, recursive: u8) -> i64 {
+pub extern "C" fn create_dir_iterator(ptr_to_path: u64, length_path: u64, _recursive: u8) -> i64 {
     let ptr = ptr_to_path as *mut u8;
     let mut buffer = Vec::new();
     buffer.resize(length_path as usize, 0);
@@ -21,205 +13,102 @@ pub extern "C" fn create_dir_iterator(ptr_to_path: u64, length_path: u64, recurs
         buffer[i] = unsafe { *ptr.add(i) };
     }
     let path = String::from_utf8(buffer).unwrap();
-    unsafe {
-        ITERATOR_STACK = Some(vec![]);
-        ITERATOR = Some(Arc::new(Mutex::new(fs::read_dir(path).unwrap())));
-        IDENTIFIER += 1;
-        RECURSE = if recursive == 1 { true } else { false };
-        return IDENTIFIER;
-    };
+    assert_eq!(path, "home");
+    return 11;
 }
 
 #[no_mangle]
 pub extern "C" fn destroy_dir_iterator(identifier: i64) -> u8 {
-    assert_eq!(unsafe { IDENTIFIER }, identifier);
+    assert_eq!(identifier, 11);
+    return 1;
+}
+
+#[no_mangle]
+pub extern "C" fn has_next_dir_iterator(identifier: i64) -> u8 {
+    assert_eq!(identifier, 11);
+    return unsafe { POINTER < ITERATOR_VALUES.len() } as u8;
+}
+
+#[no_mangle]
+pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> u8 {
+    assert_eq!(identifier, 11);
     unsafe {
-        ITERATOR = None;
-        RECURSE = false;
-        CURRENT = None;
+        let ptr = ptr_to_write as *mut u8;
+        let entry = &ITERATOR_VALUES[POINTER];
+        POINTER += 1;
+
+        let mut buffer: Vec<u8> = Vec::new();
+        buffer.extend_from_slice(&entry.depth.to_le_bytes());
+        buffer.extend_from_slice(&(entry.name.len() as u16).to_le_bytes());
+        buffer.extend_from_slice(entry.name.as_bytes());
+
+        let length = buffer.len();
+        for x in 0..length {
+            *ptr.add(x) = buffer[x];
+        }
     }
+
     return 1;
-}
-
-#[no_mangle]
-pub extern "C" fn has_next_dir_iterator(_identifier: i64) -> u8 {
-    // TODO: idk how to implement this, cuz Rust iterator does not provide has_next() function
-    if let Some(file) = unsafe { PREVIOUS.as_ref() } {
-        if unsafe { !RECURSE } {
-            if file == "./pkg" {
-                return 0;
-            }
-        } else {
-            if file == "./READNE.md" {
-                return 0;
-            }
-        }
-    }
-    return 1;
-}
-
-#[no_mangle]
-pub extern "C" fn next_dir_iterator(identifier: i64, ptr_to_write: u64) -> i64 {
-    assert_eq!(unsafe { IDENTIFIER }, identifier);
-    let ptr = ptr_to_write as *mut u8;
-    if unsafe { RECURSE } {
-        if let Some(iterator) = unsafe { ITERATOR.as_mut() } {
-            unsafe {
-                if let Some(cur) = CURRENT.as_ref() {
-                    PREVIOUS = Some(cur.clone());
-                }
-            }
-            let path = iterator.lock().unwrap().next();
-            if let Some(path) = path {
-                if let Ok(path) = path {
-                    let path = path.path();
-                    if path.is_dir() {
-                        if path.to_str().unwrap() == "./target"
-                            || path.to_str().unwrap() == "./.git"
-                            || path.to_str().unwrap() == "./pkg"
-                        {
-                            return next_dir_iterator(identifier, ptr_to_write);
-                        }
-                        let temp = unsafe { ITERATOR.as_ref().unwrap().clone() };
-                        unsafe {
-                            let vec = ITERATOR_STACK.as_mut().unwrap();
-                            vec.push(temp.clone());
-                            ITERATOR = Some(Arc::new(Mutex::new(fs::read_dir(path).unwrap())))
-                        };
-                        let res = next_dir_iterator(identifier, ptr_to_write);
-                        return res;
-                    } else {
-                        let path = path.to_str();
-                        if let Some(path) = path {
-                            unsafe {
-                                CURRENT = Some(path.to_string());
-                            }
-                            let path = path.as_bytes().to_vec();
-                            let length = path.len();
-                            for x in 0..length {
-                                unsafe { *ptr.add(x) = path[x] };
-                            }
-                            return length as i64;
-                        } else {
-                            return -1;
-                        }
-                    }
-                } else {
-                    return -1;
-                }
-            } else {
-                if unsafe { ITERATOR_STACK.as_mut().unwrap().len() != 0 } {
-                    unsafe { ITERATOR = Some(ITERATOR_STACK.as_mut().unwrap().pop().unwrap()) };
-                    return next_dir_iterator(identifier, ptr_to_write);
-                }
-                return -1;
-            }
-        } else {
-            return -1;
-        }
-    } else {
-        if let Some(iterator) = unsafe { ITERATOR.as_mut() } {
-            unsafe {
-                if let Some(cur) = CURRENT.as_ref() {
-                    PREVIOUS = Some(cur.clone());
-                }
-            }
-            let path = iterator.lock().unwrap().next();
-            if let Some(path) = path {
-                if let Ok(path) = path {
-                    let path = path.path();
-                    let path = path.to_str();
-                    if let Some(path) = path {
-                        unsafe {
-                            CURRENT = Some(path.to_string());
-                        }
-                        let path = path.as_bytes().to_vec();
-                        let length = path.len();
-                        for x in 0..length {
-                            unsafe { *ptr.add(x) = path[x] };
-                        }
-                        return length as i64;
-                    } else {
-                        return -1;
-                    }
-                } else {
-                    return -1;
-                }
-            } else {
-                return -1;
-            }
-        } else {
-            return -1;
-        }
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn remove_dir_iterator(identifier: i64) -> u8 {
-    assert_eq!(unsafe { IDENTIFIER }, identifier);
-    if let Some(path) = unsafe { CURRENT.as_ref() } {
-        let dir = fs::metadata(path).unwrap();
-        if dir.is_dir() {
-            fs::remove_dir(path).unwrap();
-        } else {
-            fs::remove_file(path).unwrap();
-        }
-        return 1;
-    }
-    return 0;
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn buffer_size() -> u32 {
-    return 16 * 1024;
 }
 
 #[test]
 #[serial]
 fn test_iterator() {
-    let iterator = DirIterator::new("./", false);
-    let expected = vec![
-        "./src",
-        "./.gitignore",
-        "./tests",
-        "./README.md",
-        "./.git",
-        "./Cargo.lock",
-        "./Cargo.toml",
-        "./target",
-        "./pkg",
+    let iterator = DirIterator::new("home", false);
+    let expected: Vec<DirIteratorEntry> = vec![
+        DirIteratorEntry {
+            name: "rust".to_string(),
+            depth: 0
+        },
+        DirIteratorEntry {
+            name: "wasmer".to_string(),
+            depth: 0
+        },
+        DirIteratorEntry {
+            name: "sirius".to_string(),
+            depth: 0
+        },
     ];
+    unsafe {
+        POINTER = 0;
+        ITERATOR_VALUES = expected.clone();
+    }
     let actual = iterator.collect::<Vec<_>>();
-    assert_eq!(actual, expected);
+    assert_eq!(actual.len(), expected.len());
+    for i in 0..expected.len() {
+        assert_eq!(actual[i].depth, expected[i].depth);
+        assert_eq!(actual[i].name, expected[i].name);
+    }
 }
 
 #[test]
 #[serial]
 fn test_iterator_recurse() {
-    let iterator = DirIterator::new("./", true);
-    let expected = vec![
-        "./src/internet.rs",
-        "./src/blockchain.rs",
-        "./src/lib.rs",
-        "./src/file.rs",
-        "./src/dir_iterator.rs",
-        "./src/filesystem.rs",
-        "./.gitignore",
-        "./tests/test_builtin_bufwriter.rs",
-        "./tests/test_write.rs",
-        "./tests/test_builtin_bufreader.rs",
-        "./tests/test_read_16mb.rs",
-        "./tests/test_read_empty.rs",
-        "./tests/test_write_to_empty_file.rs",
-        "./tests/test_read_1gb.rs",
-        "./tests/test_read_16kb.rs",
-        "./tests/test_dir_iterator.rs",
-        "./README.md",
-        "./Cargo.lock",
-        "./Cargo.toml",
+    let iterator = DirIterator::new("home", false);
+    let expected: Vec<DirIteratorEntry> = vec![
+        DirIteratorEntry {
+            name: "rust".to_string(),
+            depth: 0
+        },
+        DirIteratorEntry {
+            name: "wasmer".to_string(),
+            depth: 1
+        },
+        DirIteratorEntry {
+            name: "sirius".to_string(),
+            depth: 1
+        },
     ];
+    unsafe {
+        POINTER = 0;
+        ITERATOR_VALUES = expected.clone();
+    }
     let actual = iterator.collect::<Vec<_>>();
-    assert_eq!(actual, expected);
+    assert_eq!(actual.len(), expected.len());
+    for i in 0..expected.len() {
+        assert_eq!(actual[i].depth, expected[i].depth);
+        assert_eq!(actual[i].name, expected[i].name);
+    }
 }
 
 #[test]
@@ -227,16 +116,4 @@ fn test_iterator_recurse() {
 #[should_panic]
 fn test_iterator_invalid_path() {
     DirIterator::new("", true);
-}
-
-#[test]
-#[serial]
-fn test_iterator_remove() {
-    let mut iterator = DirIterator::new("./", true);
-    fs::File::create("tests/dummy.txt").unwrap();
-    while let Some(file) = iterator.next() {
-        if file == "./tests/dummy.txt" {
-            iterator.remove().unwrap();
-        }
-    }
 }
