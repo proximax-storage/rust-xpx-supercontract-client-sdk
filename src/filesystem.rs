@@ -30,7 +30,7 @@ pub fn remove_filesystem_entry(path: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn move_file(path: &str, new_path: &str) -> std::io::Result<()> {
+pub fn move_filesystem_entry(path: &str, new_path: &str) -> std::io::Result<()> {
     let ret = unsafe {
         import_function::move_filesystem_entry(
             new_path.as_ptr() as u64,
