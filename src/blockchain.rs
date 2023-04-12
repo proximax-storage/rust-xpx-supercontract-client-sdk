@@ -38,8 +38,10 @@ pub fn get_block_time() -> u64 {
     }
 }
 
-pub unsafe fn get_block_generation_time() -> u64 {
-    import_function::get_block_generation_time()
+pub fn get_block_generation_time() -> u64 {
+    unsafe {
+        import_function::get_block_generation_time()
+    }
 }
 
 pub fn get_transaction_hash() -> [u8; 32] {
