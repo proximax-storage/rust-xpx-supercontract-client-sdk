@@ -1,4 +1,3 @@
-use super::file::buffer_size;
 use std::{
     cmp::min,
     collections::VecDeque,
@@ -9,6 +8,7 @@ extern "C" {
     fn open_connection(ptr_to_url: u64, length_url: u64, soft_revocation_mode: u8) -> i64;
     fn read_from_internet(identifier: i64, ptr_to_write: u64) -> i64; // will return -1 if fail
     fn close_connection(identifier: i64) -> u32;
+    fn buffer_size() -> u64;
 }
 
 pub struct Internet {

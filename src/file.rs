@@ -10,7 +10,7 @@ extern "C" {
     fn open_file(ptr_to_path: u64, length_path: u64, ptr_to_mode: u64, length_mode: u64) -> i64;
     fn close_file(identifier: i64) -> u32;
     fn flush(identifier: i64) -> u32;
-    pub fn buffer_size() -> u64;
+    fn buffer_size() -> u64;
 }
 
 pub struct FileWriter {
