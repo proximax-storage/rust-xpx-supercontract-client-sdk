@@ -136,7 +136,7 @@ impl Fund {
 }
 
 #[test]
-fn test_set_transaction() {
+fn test_fund() {
     // Arrange:
     let receiver = [0u8; 32];
     let mosaic_size = 1u64.to_le_bytes();
