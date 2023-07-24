@@ -34,8 +34,7 @@ pub extern "C" fn get_block_height() -> u64 {
 #[no_mangle]
 pub extern "C" fn get_contract_public_key(ptr: u64) {
     let ptr = ptr as *mut u8;
-    let mut buffer: Vec<u8> = Vec::new();
-    buffer = [0u8; 32].to_vec();
+    let buffer: Vec<u8> = [0u8; 32].to_vec();
     unsafe {
         std::ptr::copy(buffer.as_ptr(), ptr, buffer.len());
     } 
