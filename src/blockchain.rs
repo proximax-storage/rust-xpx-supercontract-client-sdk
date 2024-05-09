@@ -14,6 +14,7 @@ mod import_function {
         pub fn get_service_payments(return_ptr: u64) -> u64;
         pub fn set_transaction(ptr_to_transaction: u64, length_transaction: u64);
         pub fn buffer_size() -> u64;
+        pub fn print_log(ptr: u64, len: u64);
     }
 }
 
@@ -82,6 +83,12 @@ pub fn get_execution_payment() -> u64 {
 pub fn get_download_payment() -> u64 {
     unsafe {
         import_function::get_download_payment()
+    }
+}
+
+pub fn get_call_params_length() -> u64 {
+    unsafe {
+        import_function::get_call_params_length()
     }
 }
 
@@ -210,5 +217,13 @@ pub fn set_transaction(transaction: &AggregateTransaction) {
 
     unsafe {
         import_function::set_transaction(bytes.as_ptr() as u64, bytes.len() as u64);
+    }
+}
+
+pub fn print_log(msg: &str) {
+    let mut bytes = msg.as_bytes().to_vec();
+
+    unsafe {
+        import_function::print_log(bytes.as_ptr() as u64, bytes.len() as u64)
     }
 }
