@@ -221,7 +221,7 @@ pub fn set_transaction(transaction: &AggregateTransaction) {
 }
 
 pub fn print_log(msg: &str) {
-    let mut bytes = msg.as_bytes().to_vec();
+    let bytes = msg.as_bytes().to_vec();
 
     unsafe {
         import_function::print_log(bytes.as_ptr() as u64, bytes.len() as u64)
