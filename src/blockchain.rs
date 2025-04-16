@@ -107,6 +107,11 @@ pub fn get_call_params() -> Vec<u8> {
     return buffer;
 }
 
+pub struct Mosaic{
+    pub id: u64,
+    pub amount: u64
+}
+
 #[derive(Default, Clone)]
 pub struct ServicePayment {
     pub mosaic_id: u64,
@@ -176,6 +181,39 @@ impl EmbeddedTransaction {
         self.payload = payload;
     }
 
+    pub fn set_as_transfer(&mut self, address: &str, mosaics: Vec<Mosaic>, message: &str){
+        self.entity_type = 16724;
+        self.version = 3;
+
+        let mut transfer_bytes = Vec::new();
+        transfer_bytes.extend_from_slice(&encode_address(address));
+        
+        let message_bytes = message.as_bytes();
+        let message_size_bytes = (message_bytes.len() as u16 + 1).to_le_bytes().to_vec();
+        // message_size_bytes[0] += 1; 
+
+        transfer_bytes.extend_from_slice(&message_size_bytes);
+
+        let mosaics_count = mosaics.len() as u8;
+        transfer_bytes.extend_from_slice(&vec![mosaics_count]);
+
+        let mut message: Vec<u8> = Vec::new();
+        message.extend_from_slice(message_bytes);
+
+        // set plain message type
+        transfer_bytes.extend_from_slice(&vec![0]);
+        transfer_bytes.extend_from_slice(&message);
+        
+        for mosaic in mosaics {
+            let mosaic_id = mosaic.id.to_le_bytes();
+            let mosaic_amount = mosaic.amount.to_le_bytes();
+            transfer_bytes.extend_from_slice(&mosaic_id);
+            transfer_bytes.extend_from_slice(&mosaic_amount);
+        }
+
+        self.payload = transfer_bytes;
+    }
+
 }
 
 #[derive(Default)]
@@ -226,4 +264,31 @@ pub fn print_log(msg: &str) {
     unsafe {
         import_function::print_log(bytes.as_ptr() as u64, bytes.len() as u64)
     }
+}
+
+pub fn encode_address(address: &str) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    static BASE32_ALPHABET: [u8; 32] = *b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let mut bits = 0u32;
+    let mut bit_count = 0;
+    for c in address.chars() {
+        let value = BASE32_ALPHABET.iter().position(|&x| x as char == c);
+        match value {
+            Some(index) => {
+                bits = (bits << 5) | index as u32;
+                bit_count += 5;
+                if bit_count >= 8 {
+                    out.push((bits >> (bit_count - 8)) as u8);
+                    bit_count -= 8;
+                }
+            }
+            None => {
+                println!("Invalid character in input: {}", c);
+            }
+        }
+    }
+    if bit_count > 0 {
+        out.push((bits >> (bit_count - 8)) as u8);
+    }
+    out
 }
